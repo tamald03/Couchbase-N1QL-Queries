@@ -34,48 +34,46 @@
   </script>
   <style>
     :root {
-      --bg: #233151;
-      --panel: #111827;
-      --panel-2: #1f2937;
-      --accent: #22c55e;
-      --accent-2: #38bdf8;
-      --text: #e5e7eb;
-      --muted: #9ca3af;
+      --bg: #101826;
+      --panel: #141e30;
+      --panel-2: #1c2a42;
+      --accent: #ff8a5b;
+      --accent-2: #6dd3ff;
+      --text: #eef2f7;
+      --muted: #a8b3c7;
       --warn: #f59e0b;
       --error: #ef4444;
-      --card: #0b1220;
-      --border: #273244;
-      --header-start: #0b1220;
-      --header-end: #0f172a;
-      --table-head-start: #0b1220;
-      --table-head-end: #0c1a2e;
-      --action-bg: rgba(15, 23, 42, 0.35);
-      --surface-glow: rgba(2, 6, 23, 0.18);
-      --bg-gradient-1: rgba(56, 189, 248, 0.15);
-      --bg-gradient-2: rgba(34, 197, 94, 0.12);
+      --card: #0f1724;
+      --border: #2b3b55;
+      --header-start: #0f1724;
+      --header-end: #16233a;
+      --table-head-start: #18263d;
+      --table-head-end: #1f2f49;
+      --action-bg: rgba(22, 35, 58, 0.6);
+      --surface-glow: rgba(4, 9, 17, 0.35);
+      --bg-gradient-1: rgba(109, 211, 255, 0.2);
+      --bg-gradient-2: rgba(255, 138, 91, 0.18);
+      --chart-text: #dbe6f7;
     }
     body.theme-light {
-      --bg: #eef2f7;
-      --panel: #f7f9fc;
+      --bg: #f5f7fb;
+      --panel: #ffffff;
       --panel-2: #eef3f8;
-      --accent: #2563eb;
-      --accent-2: #14b8a6;
-      --text: #1f2937;
-      --muted: #475569;
+      --accent: #ff7a59;
+      --accent-2: #3aa6ff;
+      --text: #1f2a3a;
+      --muted: #53627a;
       --card: #ffffff;
-      --border: #d6dde8;
+      --border: #d9e1ee;
       --header-start: #ffffff;
-      --header-end: #edf2f7;
-      --table-head-start: #e6eef8;
-      --table-head-end: #dee7f3;
-      --action-bg: rgba(226, 232, 240, 0.7);
-      --surface-glow: rgba(30, 41, 59, 0.08);
-      --bg-gradient-1: rgba(20, 184, 166, 0.14);
-      --bg-gradient-2: rgba(37, 99, 235, 0.12);
-      --chart-text: #334155;
-    }
-    :root {
-      --chart-text: #cbd5f5;
+      --header-end: #f2f5fb;
+      --table-head-start: #eaf0f9;
+      --table-head-end: #dfe8f5;
+      --action-bg: rgba(238, 243, 248, 0.85);
+      --surface-glow: rgba(16, 24, 39, 0.08);
+      --bg-gradient-1: rgba(58, 166, 255, 0.16);
+      --bg-gradient-2: rgba(255, 122, 89, 0.12);
+      --chart-text: #2a364a;
     }
 
     * { box-sizing: border-box; }
@@ -2090,14 +2088,17 @@
 
     previewBtn.addEventListener("click", () => {
       const fileName = fileFilterSelect.value;
-      const row = state.reportRows.find((r) => r.FILE_NAME === fileName);
-      previewTitle.textContent = fileName && fileName !== "__all__" ? `File Summary: ${fileName}` : "File Summary";
+      const rows = fileName && fileName !== "__all__"
+        ? state.reportRows.filter((r) => r.FILE_NAME === fileName)
+        : state.reportRows;
+      previewTitle.textContent = fileName && fileName !== "__all__" ? `File Summary: ${fileName}` : "File Summary: All Files";
       const headers = ["FILE_NAME", "STATUS", "TOTAL_RECORDS", "OC_ROWS", "RTB_ROWS", "SKIPPED_ROWS", "OC_GROUPS", "RTB_GROUPS", "FILE_TIME_S"];
       const thead = previewTable.querySelector("thead");
       const tbody = previewTable.querySelector("tbody");
       thead.innerHTML = "<tr>" + headers.map((h) => "<th>" + h + "</th>").join("") + "</tr>";
       tbody.innerHTML = "";
-      if (row) {
+      if (rows.length) {
+        rows.forEach((row) => {
         const tr = document.createElement("tr");
         headers.forEach((h) => {
           const td = document.createElement("td");
@@ -2105,6 +2106,7 @@
           tr.appendChild(td);
         });
         tbody.appendChild(tr);
+        });
       }
       previewModal.classList.add("open");
     });
