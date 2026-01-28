@@ -1,0 +1,2271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Couchbase N1QL Query Generator</title>
+  <script>
+    // Load SheetJS from CDN with fallback to a secondary CDN.
+    (function loadSheetJs() {
+      const local = "./xlsx.full.min.js";
+      const primary = "https://cdn.jsdelivr.net/npm/xlsx@0.19.3/dist/xlsx.full.min.js";
+      const fallback = "https://unpkg.com/xlsx@0.19.3/dist/xlsx.full.min.js";
+
+      function inject(src) {
+        return new Promise((resolve, reject) => {
+          const script = document.createElement("script");
+          script.src = src;
+          script.onload = () => resolve();
+          script.onerror = () => reject();
+          document.head.appendChild(script);
+        });
+      }
+
+      inject(local)
+        .catch(() => inject(primary))
+        .catch(() => inject(fallback))
+        .catch(() => {
+        const msg = document.createElement("div");
+        msg.style.cssText = "background:#4b1313;color:#fff;padding:10px;font-family:Segoe UI,Arial,sans-serif";
+        msg.textContent = "Failed to load SheetJS (XLSX). Place xlsx.full.min.js next to this HTML file or allow CDN access.";
+        document.body.prepend(msg);
+      });
+    })();
+  </script>
+  <style>
+    :root {
+      --bg: #233151;
+      --panel: #111827;
+      --panel-2: #1f2937;
+      --accent: #22c55e;
+      --accent-2: #38bdf8;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --warn: #f59e0b;
+      --error: #ef4444;
+      --card: #0b1220;
+      --border: #273244;
+      --header-start: #0b1220;
+      --header-end: #0f172a;
+      --table-head-start: #0b1220;
+      --table-head-end: #0c1a2e;
+      --action-bg: rgba(15, 23, 42, 0.35);
+      --surface-glow: rgba(2, 6, 23, 0.18);
+      --bg-gradient-1: rgba(56, 189, 248, 0.15);
+      --bg-gradient-2: rgba(34, 197, 94, 0.12);
+    }
+    body.theme-light {
+      --bg: #eef2f7;
+      --panel: #f7f9fc;
+      --panel-2: #eef3f8;
+      --accent: #2563eb;
+      --accent-2: #14b8a6;
+      --text: #1f2937;
+      --muted: #475569;
+      --card: #ffffff;
+      --border: #d6dde8;
+      --header-start: #ffffff;
+      --header-end: #edf2f7;
+      --table-head-start: #e6eef8;
+      --table-head-end: #dee7f3;
+      --action-bg: rgba(226, 232, 240, 0.7);
+      --surface-glow: rgba(30, 41, 59, 0.08);
+      --bg-gradient-1: rgba(20, 184, 166, 0.14);
+      --bg-gradient-2: rgba(37, 99, 235, 0.12);
+      --chart-text: #334155;
+    }
+    :root {
+      --chart-text: #cbd5f5;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: radial-gradient(1200px 600px at 10% -10%, var(--bg-gradient-1), transparent 60%),
+                  radial-gradient(900px 500px at 90% 0%, var(--bg-gradient-2), transparent 55%),
+                  var(--bg);
+      color: var(--text);
+    }
+    body, html {
+      width: 100%;
+      min-height: 100%;
+      overflow-x: hidden;
+    }
+    header {
+      padding: 20px 28px;
+      background: linear-gradient(135deg, var(--header-start), var(--header-end));
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 8px 24px rgba(2, 6, 23, 0.3);
+    }
+    header h1 {
+      margin: 0;
+      font-size: 22px;
+      text-align: center;
+    }
+    .header-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 10px;
+      align-items: center;
+    }
+    .header-actions .icon-btn {
+      background: var(--panel);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 32px;
+    }
+    .header-actions .icon-btn:hover {
+      box-shadow: 0 6px 16px rgba(2, 6, 23, 0.2);
+    }
+    header p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    main {
+      display: grid;
+      grid-template-columns: 320px minmax(0, 1fr);
+      gap: 18px;
+      padding: 16px 16px 24px;
+      width: 100%;
+      max-width: 100%;
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      box-shadow: 0 8px 24px var(--surface-glow);
+    }
+    .panel h2 {
+      margin: 0 0 10px 0;
+      font-size: 15px;
+      color: var(--accent-2);
+    }
+    .control-group {
+      margin-bottom: 14px;
+    }
+    .action-section {
+      border: 1px solid var(--border);
+      background: var(--action-bg);
+      padding: 12px;
+      border-radius: 10px;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+    }
+    .action-section label {
+      font-weight: 600;
+      color: var(--text);
+    }
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    input[type="file"], input[type="number"], input[type="text"] {
+      width: 100%;
+      padding: 8px 10px;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 6px;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    input[type="file"]:focus, input[type="number"]:focus, input[type="text"]:focus {
+      outline: none;
+      border-color: var(--accent-2);
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+    }
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+    .btn {
+      width: 100%;
+      padding: 10px 12px;
+      background: var(--accent);
+      color: #081018;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 8px;
+      transition: transform 0.08s ease, box-shadow 0.2s ease;
+    }
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(34, 197, 94, 0.15);
+    }
+    .panel .btn:nth-of-type(odd) {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #081018;
+    }
+    .panel .btn:nth-of-type(odd):hover {
+      box-shadow: 0 6px 16px rgba(34, 197, 94, 0.15);
+    }
+    .panel .btn:nth-of-type(even) {
+      background: var(--accent-2);
+      border-color: var(--accent-2);
+      color: #06212c;
+    }
+    .panel .btn:nth-of-type(even):hover {
+      box-shadow: 0 6px 16px rgba(56, 189, 248, 0.18);
+    }
+    .btn.secondary {
+      background: var(--accent-2);
+      color: #06212c;
+    }
+    .btn.secondary:hover {
+      box-shadow: 0 6px 16px rgba(56, 189, 248, 0.18);
+    }
+    .btn.outline {
+      background: var(--accent-2);
+      border: 1px solid var(--accent-2);
+      color: #06212c;
+    }
+    .btn.outline:hover {
+      box-shadow: 0 6px 16px rgba(56, 189, 248, 0.18);
+    }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      min-height: 82px;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+    }
+    .card:hover {
+      transform: translateY(-1px);
+      transition: transform 0.15s ease;
+    }
+    .card h3 {
+      margin: 0 0 6px 0;
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .card .value {
+      font-size: 20px;
+      font-weight: 700;
+    }
+    .status {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+    .section {
+      margin-bottom: 16px;
+    }
+    .section h3 {
+      margin: 0 0 10px 0;
+      font-size: 14px;
+      color: var(--accent-2);
+    }
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 12px;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      table-layout: fixed;
+    }
+    th, td {
+      padding: 8px 10px;
+      vertical-align: top;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      overflow-wrap: anywhere;
+    }
+    tr:last-child td {
+      border-bottom: none;
+    }
+    th {
+      background: linear-gradient(180deg, var(--table-head-start), var(--table-head-end));
+      color: var(--muted);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
+    }
+    .toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .toggle-icon {
+      font-size: 12px;
+      line-height: 1;
+    }
+    .toggle input {
+      appearance: none;
+      width: 34px;
+      height: 18px;
+      border-radius: 999px;
+      background: #1f2937;
+      border: 1px solid var(--border);
+      position: relative;
+      cursor: pointer;
+      transition: background 0.2s ease, border-color 0.2s ease;
+    }
+    .toggle input::after {
+      content: "";
+      width: 14px;
+      height: 14px;
+      background: #fff;
+      border-radius: 50%;
+      position: absolute;
+      top: 1px;
+      left: 1px;
+      transition: transform 0.2s ease;
+    }
+    .toggle input:checked {
+      background: var(--accent-2);
+      border-color: var(--accent-2);
+    }
+    .toggle input:checked::after {
+      transform: translateX(16px);
+    }
+    .progress-wrap {
+      display: grid;
+      gap: 8px;
+    }
+    .progress-bar {
+      height: 10px;
+      background: rgba(148, 163, 184, 0.2);
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      width: 0%;
+      transition: width 0.2s ease;
+    }
+    .progress-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-size: 12px;
+      color: var(--muted);
+      max-height: 120px;
+      overflow-y: auto;
+    }
+    .progress-item {
+      padding: 4px 0;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .chart-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .chart-card {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+    }
+    .chart-card h4 {
+      margin: 0;
+      font-size: 12px;
+      color: var(--chart-text);
+    }
+    .chart-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .chart-card canvas {
+      width: 100%;
+      display: block;
+    }
+    .filewise-pies {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .filewise-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      font-size: 10px;
+      color: var(--muted);
+      text-align: center;
+      word-break: break-word;
+    }
+    .chart-legend {
+      display: flex;
+      gap: 10px;
+      font-size: 11px;
+      color: var(--chart-text);
+      margin-top: 6px;
+      flex-wrap: wrap;
+    }
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 6px;
+    }
+    .chart-wrap {
+      position: relative;
+    }
+    .chart-tooltip {
+      position: absolute;
+      pointer-events: none;
+      background: var(--panel);
+      color: var(--text);
+      padding: 6px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      border: 1px solid var(--border);
+      box-shadow: 0 8px 18px rgba(2, 6, 23, 0.2);
+      opacity: 0;
+      transform: translate(-50%, -120%);
+      transition: opacity 0.1s ease;
+      white-space: nowrap;
+    }
+    .group-row {
+      background: rgba(56, 189, 248, 0.12);
+      cursor: pointer;
+      font-weight: 600;
+    }
+    tbody tr:nth-child(odd) td {
+      background: rgba(255, 255, 255, 0.015);
+    }
+    tbody tr:hover td {
+      background: rgba(56, 189, 248, 0.08);
+    }
+    .query-cell {
+      white-space: pre-wrap;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 11px;
+      max-width: 480px;
+      word-break: break-word;
+    }
+    .table-wrap {
+      max-height: 52vh;
+      overflow-x: auto;
+      overflow-y: auto;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      width: 100%;
+    }
+    .table-wrap table {
+      border: none;
+      border-radius: 0;
+    }
+    @media (max-width: 1400px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+    }
+    @media (max-width: 1100px) {
+      .dashboard {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .toolbar {
+        grid-template-columns: 1fr;
+      }
+      .panel-split {
+        grid-template-columns: 1fr;
+      }
+    }
+    @media (max-width: 680px) {
+      .dashboard {
+        grid-template-columns: 1fr;
+      }
+    }
+    .pill {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 999px;
+      font-size: 10px;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .pill.ok { color: var(--accent); border-color: #1c4d2b; }
+    .pill.warn { color: var(--warn); border-color: #4b3a12; }
+    .pill.error { color: var(--error); border-color: #4b1313; }
+    .right-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .panel-split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+    .panel-left,
+    .panel-right {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .toolbar {
+      display: grid;
+      grid-template-columns: 1fr 220px;
+      gap: 10px;
+      align-items: center;
+    }
+    .toolbar input[type="text"] {
+      padding: 8px 10px;
+    }
+    .footer-note {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+    .inline-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+    .mini-btn {
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      color: var(--text);
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .mini-btn:hover {
+      box-shadow: 0 4px 12px rgba(2, 6, 23, 0.2);
+    }
+    .copy-btn {
+      margin-top: 6px;
+      display: inline-block;
+    }
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+    }
+    .modal.open {
+      display: flex;
+    }
+    .modal-content {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      width: min(720px, 92vw);
+      box-shadow: 0 20px 40px rgba(2, 6, 23, 0.35);
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1 class="header-title">Couchbase N1QL Query Generator</h1>
+    <div class="header-actions">
+      <button id="refreshBtn" class="icon-btn" title="Refresh">⟳</button>
+      <label class="toggle" title="Toggle light/dark">
+        <span class="toggle-icon">🌙</span>
+        <input id="themeToggle" type="checkbox" />
+        <span class="toggle-icon">☀️</span>
+      </label>
+    </div>
+  </header>
+
+  <main>
+    <section class="panel">
+      <h2>Input & Settings</h2>
+      <div class="panel-split">
+        <div class="panel-left">
+          <div class="control-group">
+            <label for="fileInput">Upload Excel file(s)</label>
+            <input id="fileInput" type="file" multiple accept=".xlsx,.xls" />
+          </div>
+          <div class="control-group">
+            <label for="maxKeys">Max keys per group</label>
+            <input id="maxKeys" type="number" min="1" value="500" />
+          </div>
+          <div class="control-group">
+            <div class="checkbox-row">
+              <input id="validateQueries" type="checkbox" checked />
+              <label for="validateQueries">Validate queries</label>
+            </div>
+            <div class="checkbox-row">
+              <input id="analyzeOptimization" type="checkbox" checked />
+              <label for="analyzeOptimization">Optimization analysis</label>
+            </div>
+            <div class="checkbox-row">
+              <input id="estimatePerformance" type="checkbox" checked />
+              <label for="estimatePerformance">Performance estimate</label>
+            </div>
+          </div>
+        </div>
+        <div class="panel-right">
+          <button id="processBtn" class="btn">PROCESS FILES</button>
+          <div class="control-group action-section">
+            <label>Operation</label>
+            <div class="checkbox-row">
+              <input id="opSelect" type="radio" name="operationMode" value="select" disabled checked />
+              <label for="opSelect">SELECT</label>
+            </div>
+            <div class="checkbox-row">
+              <input id="opDelete" type="radio" name="operationMode" value="delete" disabled />
+              <label for="opDelete">DELETE</label>
+            </div>
+            <button id="executeBtn" class="btn secondary" disabled>EXECUTE</button>
+          </div>
+          <div class="control-group action-section">
+            <label>Generate File(s)</label>
+            <div class="control-group">
+              <label for="fileFilterSelect">File selection</label>
+              <select id="fileFilterSelect">
+                <option value="__all__">All files</option>
+              </select>
+            </div>
+            <div class="inline-controls">
+              <button id="genAllBtn" class="mini-btn" disabled>Select All</button>
+              <button id="genNoneBtn" class="mini-btn" disabled>Clear</button>
+              <button id="previewBtn" class="mini-btn" disabled>Preview File Summary</button>
+            </div>
+            <div class="checkbox-row">
+              <input id="genSelect" type="checkbox" disabled />
+              <label for="genSelect">SELECT</label>
+            </div>
+            <div class="checkbox-row">
+              <input id="genDelete" type="checkbox" disabled />
+              <label for="genDelete">DELETE</label>
+            </div>
+            <div class="checkbox-row">
+              <input id="genExec" type="checkbox" disabled />
+              <label for="genExec">Execution Report</label>
+            </div>
+            <div class="checkbox-row">
+              <input id="genCombined" type="checkbox" disabled />
+              <label for="genCombined">Combined (Select + Delete)</label>
+            </div>
+            <button id="generateFilesBtn" class="btn secondary" disabled>GENERATE FILES</button>
+          </div>
+          <div class="control-group action-section">
+            <label>Processing Status</label>
+            <div class="progress-wrap">
+              <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+              </div>
+              <div class="status" id="progressSummary">No processing yet.</div>
+              <ul class="progress-list" id="progressList"></ul>
+            </div>
+          </div>
+          <div class="status" id="statusMessage">Waiting for input files.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="right-panel">
+      <div class="dashboard" id="dashboard">
+        <div class="card"><h3>Files Processed</h3><div class="value" id="dashFiles">0</div></div>
+        <div class="card"><h3>Total Records</h3><div class="value" id="dashRecords">0</div></div>
+        <div class="card"><h3>OC Rows</h3><div class="value" id="dashOcRows">0</div></div>
+        <div class="card"><h3>RTB Rows</h3><div class="value" id="dashRtbRows">0</div></div>
+        <div class="card"><h3>Skipped Rows</h3><div class="value" id="dashSkipped">0</div></div>
+        <div class="card"><h3>Total Groups</h3><div class="value" id="dashGroups">0</div></div>
+        <div class="card"><h3>Runtime (s)</h3><div class="value" id="dashRuntime">0.00</div></div>
+        <div class="card"><h3>Current Mode</h3><div class="value" id="dashMode">Select</div></div>
+      </div>
+
+      <div class="panel section">
+        <h3>Query Results</h3>
+        <div class="toolbar">
+          <div class="status" id="querySummary">No data loaded.</div>
+          <input id="querySearch" type="text" placeholder="Search by entity, file, or query..." />
+        </div>
+        <div class="inline-controls">
+          <label for="queryFileFilter">File</label>
+          <select id="queryFileFilter">
+            <option value="__all__">All files</option>
+          </select>
+          <label for="queryPrefixFilter">Prefix</label>
+          <select id="queryPrefixFilter">
+            <option value="__all__">All</option>
+            <option value="OC">OC</option>
+            <option value="RTB">RTB</option>
+          </select>
+        </div>
+        <div class="checkbox-row">
+          <input id="groupByEntity" type="checkbox" />
+          <label for="groupByEntity">Group by entity</label>
+        </div>
+        <div class="table-wrap">
+          <table id="queryTable">
+            <thead></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="footer-note">Tip: Use the search box to filter queries instantly.</div>
+      </div>
+
+      <div class="panel section">
+        <h3>Execution Report</h3>
+        <div class="chart-grid">
+          <div class="chart-card">
+            <div class="chart-header">
+              <h4>OC vs RTB Rows</h4>
+              <div class="chart-legend">
+                <span><span class="legend-dot" style="background:#22c55e"></span>OC Rows</span>
+                <span><span class="legend-dot" style="background:#38bdf8"></span>RTB Rows</span>
+              </div>
+              <button id="downloadPieBtn" class="mini-btn">Download PNG</button>
+            </div>
+            <div class="chart-wrap">
+              <canvas id="ocRtbChart" height="160"></canvas>
+              <div class="chart-tooltip" id="ocRtbTooltip"></div>
+            </div>
+            <div class="filewise-pies" id="ocRtbFilewise"></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-header">
+              <h4>Groups Per File</h4>
+              <div class="chart-legend">
+                <span><span class="legend-dot" style="background:#22c55e"></span>OC Groups</span>
+                <span><span class="legend-dot" style="background:#38bdf8"></span>RTB Groups</span>
+              </div>
+              <button id="downloadLineBtn" class="mini-btn">Download PNG</button>
+            </div>
+            <div class="chart-wrap">
+              <canvas id="groupChart" height="260"></canvas>
+              <div class="chart-tooltip" id="groupTooltip"></div>
+            </div>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table id="reportTable">
+            <thead></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    function waitForXlsx(tries = 0) {
+      if (window.XLSX) return Promise.resolve();
+      if (tries > 200) return Promise.reject(new Error("XLSX load timeout"));
+      return new Promise((resolve) => setTimeout(resolve, 50)).then(() => waitForXlsx(tries + 1));
+    }
+
+    function startApp() {
+      const OC_PREFIX = "oc_";
+    const RTB_PREFIX = "rtb_";
+    const INPUT_SHEET_NAME = "DETAILED_RUN_STATUS";
+
+    const state = {
+      fileResults: [],
+      reportRows: [],
+      queryMode: "select",
+      allQueryRows: [],
+      lastRuntime: 0
+    };
+
+    const fileInput = document.getElementById("fileInput");
+    const processBtn = document.getElementById("processBtn");
+    const opSelect = document.getElementById("opSelect");
+    const opDelete = document.getElementById("opDelete");
+    const executeBtn = document.getElementById("executeBtn");
+    const fileFilterSelect = document.getElementById("fileFilterSelect");
+    const genAllBtn = document.getElementById("genAllBtn");
+    const genNoneBtn = document.getElementById("genNoneBtn");
+    const previewBtn = document.getElementById("previewBtn");
+    const genSelect = document.getElementById("genSelect");
+    const genDelete = document.getElementById("genDelete");
+    const genExec = document.getElementById("genExec");
+    const genCombined = document.getElementById("genCombined");
+    const generateFilesBtn = document.getElementById("generateFilesBtn");
+    const statusMessage = document.getElementById("statusMessage");
+    const progressFill = document.getElementById("progressFill");
+    const progressSummary = document.getElementById("progressSummary");
+    const progressList = document.getElementById("progressList");
+    const queryTable = document.getElementById("queryTable");
+    const reportTable = document.getElementById("reportTable");
+    const querySearch = document.getElementById("querySearch");
+    const queryFileFilter = document.getElementById("queryFileFilter");
+    const queryPrefixFilter = document.getElementById("queryPrefixFilter");
+    const groupByEntity = document.getElementById("groupByEntity");
+    const ocRtbChart = document.getElementById("ocRtbChart");
+    const groupChart = document.getElementById("groupChart");
+    const ocRtbTooltip = document.getElementById("ocRtbTooltip");
+    const groupTooltip = document.getElementById("groupTooltip");
+    const ocRtbFilewise = document.getElementById("ocRtbFilewise");
+    const themeToggle = document.getElementById("themeToggle");
+    const refreshBtn = document.getElementById("refreshBtn");
+    const downloadPieBtn = document.getElementById("downloadPieBtn");
+    const downloadLineBtn = document.getElementById("downloadLineBtn");
+    const previewModal = document.getElementById("previewModal");
+    const previewClose = document.getElementById("previewClose");
+    const previewTitle = document.getElementById("previewTitle");
+    const previewTable = document.getElementById("previewTable");
+
+    const dashFiles = document.getElementById("dashFiles");
+    const dashRecords = document.getElementById("dashRecords");
+    const dashOcRows = document.getElementById("dashOcRows");
+    const dashRtbRows = document.getElementById("dashRtbRows");
+    const dashSkipped = document.getElementById("dashSkipped");
+    const dashGroups = document.getElementById("dashGroups");
+    const dashRuntime = document.getElementById("dashRuntime");
+    const dashMode = document.getElementById("dashMode");
+    const querySummary = document.getElementById("querySummary");
+
+    function setStatus(text) {
+      statusMessage.textContent = text;
+    }
+
+    function setProgress(current, total, fileName, statusText, elapsed) {
+      const percent = total ? Math.round((current / total) * 100) : 0;
+      progressFill.style.width = percent + "%";
+      progressSummary.textContent = total
+        ? `Processed ${current}/${total} files (${percent}%)`
+        : "No processing yet.";
+      if (fileName) {
+        const item = document.createElement("li");
+        item.className = "progress-item";
+        item.innerHTML = `<span>${fileName}</span><span>${statusText} • ${elapsed}s</span>`;
+        progressList.prepend(item);
+      }
+    }
+
+    function toLowerSafe(value) {
+      return String(value || "").toLowerCase();
+    }
+
+    function normalizeEntityName(value) {
+      let text = value == null ? "" : String(value);
+      text = text.replace(/\u00a0/g, " ").trim();
+      while (text.length && !/^[a-z0-9]/i.test(text[0])) {
+        text = text.slice(1);
+      }
+      return text.trim();
+    }
+
+    function formatEntityName(entityName) {
+      if (!entityName) return entityName;
+      return entityName.startsWith("`") ? entityName : "`" + entityName;
+    }
+
+    function baseEntityName(entityName) {
+      const text = String(entityName || "");
+      const idx = text.indexOf(" (Part ");
+      return idx > -1 ? text.slice(0, idx) : text;
+    }
+
+    function truncate(text, max = 80) {
+      const value = String(text || "");
+      if (value.length <= max) return value;
+      return value.slice(0, max - 3) + "...";
+    }
+
+    function readDetailedRunStatus(workbook) {
+      const sheet = workbook.Sheets[INPUT_SHEET_NAME];
+      if (!sheet) return [];
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null });
+      if (!rows.length) return [];
+
+      const headers = rows[0].map((h) => String(h || "").trim());
+      const colMap = {};
+      headers.forEach((header, idx) => {
+        colMap[header.toLowerCase()] = idx;
+      });
+
+      if (colMap["entity_name"] == null || colMap["key"] == null) {
+        return [];
+      }
+
+      const results = [];
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (!row) continue;
+        const entity = row[colMap["entity_name"]];
+        const key = row[colMap["key"]];
+        if (entity == null || key == null || String(entity).trim() === "" || String(key).trim() === "") {
+          continue;
+        }
+        results.push({ ENTITY_NAME: entity, KEY: key });
+      }
+      return results;
+    }
+
+    function splitEntitiesByPrefixRowwise(rows) {
+      const ocRows = [];
+      const rtbRows = [];
+      let skipped = 0;
+
+      rows.forEach((row) => {
+        const entityName = normalizeEntityName(row.ENTITY_NAME);
+        const keyValue = row.KEY;
+        if (!entityName) {
+          skipped += 1;
+          return;
+        }
+        const entityLower = entityName.toLowerCase();
+        if (entityLower.startsWith(OC_PREFIX)) {
+          ocRows.push({ ENTITY_NAME: formatEntityName(entityName), KEY: keyValue });
+        } else if (entityLower.startsWith(RTB_PREFIX)) {
+          rtbRows.push({ ENTITY_NAME: formatEntityName(entityName), KEY: keyValue });
+        } else {
+          skipped += 1;
+        }
+      });
+
+      return { ocRows, rtbRows, skipped };
+    }
+
+    function groupKeysByEntity(rows, maxKeys) {
+      if (!rows.length) return [];
+      const sorted = rows.slice().sort((a, b) => {
+        const aName = String(a.ENTITY_NAME || "");
+        const bName = String(b.ENTITY_NAME || "");
+        if (aName !== bName) return aName.localeCompare(bName);
+        return String(a.KEY || "").localeCompare(String(b.KEY || ""));
+      });
+
+      const groups = [];
+      let currentName = null;
+      let currentKeys = [];
+
+      sorted.forEach((row) => {
+        const name = String(row.ENTITY_NAME || "");
+        if (currentName === null) currentName = name;
+        if (name !== currentName) {
+          groups.push({ entity: currentName, keys: currentKeys });
+          currentName = name;
+          currentKeys = [];
+        }
+        currentKeys.push(row.KEY);
+      });
+      if (currentName !== null) {
+        groups.push({ entity: currentName, keys: currentKeys });
+      }
+
+      const result = [];
+      groups.forEach((group) => {
+        const totalKeys = group.keys.length;
+        const totalParts = Math.ceil(totalKeys / maxKeys);
+        if (totalKeys > maxKeys) {
+          for (let part = 0; part < totalParts; part++) {
+            const start = part * maxKeys;
+            const end = Math.min((part + 1) * maxKeys, totalKeys);
+            const chunk = group.keys.slice(start, end);
+            result.push({
+              entity_name: group.entity,
+              keys: chunk,
+              total_keys: totalKeys,
+              part_number: part + 1,
+              total_parts: totalParts,
+              chunk_size: chunk.length
+            });
+          }
+        } else {
+          result.push({
+            entity_name: group.entity,
+            keys: group.keys,
+            total_keys: totalKeys,
+            part_number: 1,
+            total_parts: 1,
+            chunk_size: totalKeys
+          });
+        }
+      });
+
+      return result;
+    }
+
+    function validateN1qlQuery(query, queryType) {
+      const issues = [];
+      const queryUpper = String(query || "").toUpperCase();
+
+      if ((query.match(/\[/g) || []).length !== (query.match(/\]/g) || []).length) {
+        issues.push({ level: "Error", message: "Unbalanced square brackets []", query_type: queryType });
+      }
+      if ((query.match(/\(/g) || []).length !== (query.match(/\)/g) || []).length) {
+        issues.push({ level: "Error", message: "Unbalanced parentheses ()", query_type: queryType });
+      }
+      if ((query.match(/"/g) || []).length % 2 !== 0) {
+        issues.push({ level: "Warning", message: "Unbalanced double quotes", query_type: queryType });
+      }
+
+      if (queryType === "SELECT") {
+        if (!queryUpper.includes("FROM")) {
+          issues.push({ level: "Error", message: "SELECT query missing FROM clause", query_type: queryType });
+        }
+        if (!queryUpper.includes("SELECT")) {
+          issues.push({ level: "Error", message: "Missing SELECT keyword", query_type: queryType });
+        }
+        if (queryUpper.includes("LEFT JOIN") && !queryUpper.includes("ON KEYS")) {
+          issues.push({ level: "Warning", message: "LEFT JOIN without ON KEYS clause", query_type: queryType });
+        }
+      } else if (queryType === "DELETE") {
+        if (!queryUpper.includes("DELETE")) {
+          issues.push({ level: "Error", message: "Missing DELETE keyword", query_type: queryType });
+        }
+        if (!queryUpper.includes("FROM")) {
+          issues.push({ level: "Error", message: "DELETE query missing FROM clause", query_type: queryType });
+        }
+        if (!queryUpper.includes("USE KEYS") && !queryUpper.includes("WHERE")) {
+          issues.push({ level: "Warning", message: "DELETE without USE KEYS or WHERE clause", query_type: queryType });
+        }
+      }
+
+      if ((queryUpper.match(/SELECT/g) || []).length > 1 && !queryUpper.includes("UNION")) {
+        issues.push({ level: "Warning", message: "Multiple SELECT keywords without UNION", query_type: queryType });
+      }
+      if (!String(query || "").trim().endsWith(";")) {
+        issues.push({ level: "Warning", message: "Query does not end with semicolon", query_type: queryType });
+      }
+      ["--", "/*", "*/"].forEach((pattern) => {
+        if (query.includes(pattern) && pattern !== "-- ") {
+          issues.push({ level: "Warning", message: "Potential SQL comment pattern detected: " + pattern, query_type: queryType });
+        }
+      });
+      return issues;
+    }
+
+    function analyzeQueryOptimization(query, keyCount) {
+      const suggestions = [];
+      const queryUpper = String(query || "").toUpperCase();
+
+      if (queryUpper.includes("USE KEYS")) {
+        suggestions.push({
+          category: "Index Usage",
+          suggestion: "Query uses USE KEYS which provides direct key lookup - optimal performance",
+          impact: "High",
+          current_issue: "None - already optimized"
+        });
+      } else {
+        suggestions.push({
+          category: "Index Usage",
+          suggestion: "Consider using USE KEYS for direct document access instead of WHERE clause",
+          impact: "High",
+          current_issue: "Missing USE KEYS clause for key-based lookup"
+        });
+      }
+
+      if (queryUpper.includes("SELECT *") || queryUpper.includes("SELECT\n*")) {
+        suggestions.push({
+          category: "Projection",
+          suggestion: "Avoid SELECT * - specify only required fields to reduce data transfer",
+          impact: "Medium",
+          current_issue: "Using SELECT * retrieves all fields"
+        });
+      }
+
+      if (keyCount > 1000) {
+        suggestions.push({
+          category: "Batch Size",
+          suggestion: "Key count (" + keyCount + ") is large. Consider splitting into smaller batches of 500-1000 keys",
+          impact: "High",
+          current_issue: "Large batch size may cause timeout or memory issues"
+        });
+      } else if (keyCount > 500) {
+        suggestions.push({
+          category: "Batch Size",
+          suggestion: "Key count (" + keyCount + ") is moderate. Monitor query performance",
+          impact: "Medium",
+          current_issue: "Batch size approaching recommended limit"
+        });
+      }
+
+      if (queryUpper.includes("JOIN")) {
+        if (!queryUpper.includes("ON KEYS")) {
+          suggestions.push({
+            category: "JOIN Performance",
+            suggestion: "Use ON KEYS for JOIN operations instead of ON clause for better performance",
+            impact: "High",
+            current_issue: "JOIN without ON KEYS may require index scan"
+          });
+        } else {
+          suggestions.push({
+            category: "JOIN Performance",
+            suggestion: "JOIN with ON KEYS is efficient for key-based lookups",
+            impact: "Low",
+            current_issue: "None - JOIN is optimized"
+          });
+        }
+      }
+
+      if ((queryUpper.match(/SELECT/g) || []).length > 1) {
+        suggestions.push({
+          category: "Query Complexity",
+          suggestion: "Subqueries detected. Consider flattening or using JOINs if possible",
+          impact: "Medium",
+          current_issue: "Subqueries may impact performance"
+        });
+      }
+
+      if (queryUpper.includes("ORDER BY") && !queryUpper.includes("LIMIT")) {
+        suggestions.push({
+          category: "Result Set",
+          suggestion: "ORDER BY without LIMIT sorts entire result set. Add LIMIT if possible",
+          impact: "Medium",
+          current_issue: "Sorting without limiting result size"
+        });
+      }
+
+      if (queryUpper.includes("DISTINCT")) {
+        suggestions.push({
+          category: "Data Processing",
+          suggestion: "DISTINCT requires additional processing. Ensure it is necessary",
+          impact: "Low",
+          current_issue: "DISTINCT operation adds overhead"
+        });
+      }
+
+      return suggestions;
+    }
+
+    function estimateQueryPerformance(query, keyCount, queryType) {
+      const queryUpper = String(query || "").toUpperCase();
+      let baseTimeMs = 0;
+      const factors = [];
+
+      if (queryUpper.includes("USE KEYS")) {
+        baseTimeMs = 1.0 * keyCount;
+        factors.push("Direct key lookup: " + keyCount + " keys");
+      } else {
+        baseTimeMs = 5.0 * keyCount;
+        factors.push("Index scan required: " + keyCount + " keys");
+      }
+
+      if (queryUpper.includes("JOIN")) {
+        if (queryUpper.includes("ON KEYS")) {
+          baseTimeMs += 2.0 * keyCount;
+          factors.push("Key-based JOIN operation");
+        } else {
+          baseTimeMs += 10.0 * keyCount;
+          factors.push("Index-based JOIN (slower)");
+        }
+      }
+
+      if (["COUNT(", "SUM(", "AVG(", "MIN(", "MAX("].some((agg) => queryUpper.includes(agg))) {
+        baseTimeMs += 5.0 * keyCount;
+        factors.push("Aggregation functions detected");
+      }
+
+      if (queryUpper.includes("ORDER BY")) {
+        baseTimeMs += keyCount * 0.1;
+        factors.push("Sorting overhead (ORDER BY)");
+      }
+
+      if (queryUpper.includes("DISTINCT")) {
+        baseTimeMs += keyCount * 0.2;
+        factors.push("DISTINCT processing");
+      }
+
+      if (queryType === "DELETE") {
+        baseTimeMs *= 0.8;
+        factors.push("DELETE operation (faster than SELECT)");
+      }
+
+      let complexityScore = 0;
+      if (queryUpper.includes("JOIN")) complexityScore += 2;
+      if (queryUpper.includes("SUBQUERY") || (queryUpper.match(/SELECT/g) || []).length > 1) complexityScore += 2;
+      if (["COUNT(", "SUM(", "AVG(", "MIN(", "MAX("].some((agg) => queryUpper.includes(agg))) {
+        complexityScore += 1;
+      }
+      if (queryUpper.includes("ORDER BY") || queryUpper.includes("GROUP BY")) complexityScore += 1;
+
+      let complexity = "Simple";
+      if (complexityScore <= 2 && complexityScore > 0) complexity = "Moderate";
+      if (complexityScore > 2) complexity = "Complex";
+
+      if (keyCount > 1000) {
+        baseTimeMs *= 1.2;
+        factors.push("Large batch size multiplier (1.2x)");
+      }
+
+      return {
+        estimated_time_ms: Math.round(baseTimeMs * 100) / 100,
+        complexity,
+        key_count: keyCount,
+        factors
+      };
+    }
+
+    function generateQueries(entityName, keys, options) {
+      const keysStr = JSON.stringify(keys);
+      const entityRef = formatEntityName(entityName);
+
+      const selectQuery = [
+        "SELECT",
+        "    k AS key_name,",
+        "    META(e).id AS document_id,",
+        "    CASE",
+        "        WHEN e IS MISSING THEN \"Not Found\"",
+        "        ELSE \"Found\"",
+        "    END AS status",
+        "FROM " + keysStr + " AS k",
+        "LEFT JOIN " + entityRef + " e ON KEYS k;"
+      ].join("\n");
+
+      const deleteQuery = "DELETE FROM " + entityRef + " USE KEYS " + keysStr + ";";
+
+      const result = {
+        select_query: selectQuery,
+        delete_query: deleteQuery,
+        validation_issues: [],
+        optimization_suggestions: [],
+        performance_estimate: null
+      };
+
+      if (options.validateQueries) {
+        const selectIssues = validateN1qlQuery(selectQuery, "SELECT");
+        const deleteIssues = validateN1qlQuery(deleteQuery, "DELETE");
+        result.validation_issues = selectIssues.concat(deleteIssues);
+      }
+
+      if (options.analyzeOptimization) {
+        result.optimization_suggestions = analyzeQueryOptimization(selectQuery, keys.length);
+      }
+
+      if (options.estimatePerformance) {
+        result.performance_estimate = estimateQueryPerformance(selectQuery, keys.length, "SELECT");
+      }
+
+      return result;
+    }
+
+    function buildValidationSummary(issues) {
+      if (!issues.length) return "Valid";
+      const errors = issues.filter((issue) => issue.level === "Error");
+      const warnings = issues.filter((issue) => issue.level === "Warning");
+      const parts = [];
+      if (errors.length) parts.push("Errors: " + errors.map((i) => i.message).join("; "));
+      if (warnings.length) parts.push("Warnings: " + warnings.map((i) => i.message).join("; "));
+      return parts.join(" | ");
+    }
+
+    function buildOptimizationSummary(suggestions) {
+      if (!suggestions.length) return "";
+      const high = suggestions.filter((s) => s.impact === "High");
+      if (high.length) {
+        return "High impact: " + truncate(high[0].suggestion, 70);
+      }
+      return suggestions.length + " suggestions";
+    }
+
+    function buildPerformanceSummary(perf) {
+      if (!perf) return "";
+      return perf.complexity + " | ~" + Math.round(perf.estimated_time_ms) + "ms | " + perf.key_count + " keys";
+    }
+
+    function createOutputRows(groups, options, fileName, prefix) {
+      const rows = [];
+      groups.forEach((group) => {
+        const queryResult = generateQueries(group.entity_name, group.keys, options);
+        let entityDisplay = formatEntityName(group.entity_name);
+        if (group.total_parts > 1) {
+          entityDisplay = entityDisplay + " (Part " + group.part_number + "/" + group.total_parts + ")";
+        }
+        rows.push({
+          FILE_NAME: fileName,
+          PREFIX: prefix,
+          ENTITY_NAME: entityDisplay,
+          NUMBER_OF_KEYS: group.chunk_size,
+          TOTAL_KEYS_FOR_ENTITY: group.total_keys,
+          SELECT_QUERY: queryResult.select_query,
+          DELETE_QUERY: queryResult.delete_query,
+          VALIDATION: buildValidationSummary(queryResult.validation_issues),
+          OPTIMIZATION: buildOptimizationSummary(queryResult.optimization_suggestions),
+          PERFORMANCE: buildPerformanceSummary(queryResult.performance_estimate)
+        });
+      });
+      return rows;
+    }
+
+    function makeSheetTitle(baseName, suffix, existing) {
+      const raw = (baseName + "_" + suffix).replace(/\s+/g, "_");
+      let baseTitle = raw.slice(0, 31);
+      if (!existing.has(baseTitle)) {
+        existing.add(baseTitle);
+        return baseTitle;
+      }
+      for (let i = 1; i < 1000; i++) {
+        const tail = "_" + i;
+        const candidate = (baseTitle.slice(0, 31 - tail.length) + tail);
+        if (!existing.has(candidate)) {
+          existing.add(candidate);
+          return candidate;
+        }
+      }
+      throw new Error("Could not generate unique sheet name.");
+    }
+
+    function renderReportTable() {
+      const headers = ["FILE_NAME", "STATUS", "TOTAL_RECORDS", "OC_ROWS", "RTB_ROWS", "SKIPPED_ROWS", "OC_GROUPS", "RTB_GROUPS", "FILE_TIME_S", "ERROR"];
+      const thead = reportTable.querySelector("thead");
+      const tbody = reportTable.querySelector("tbody");
+      thead.innerHTML = "<tr>" + headers.map((h) => "<th>" + h + "</th>").join("") + "</tr>";
+      tbody.innerHTML = "";
+      const totals = {
+        TOTAL_RECORDS: 0,
+        OC_ROWS: 0,
+        RTB_ROWS: 0,
+        SKIPPED_ROWS: 0,
+        OC_GROUPS: 0,
+        RTB_GROUPS: 0,
+        FILE_TIME_S: 0
+      };
+      state.reportRows.forEach((row) => {
+        const tr = document.createElement("tr");
+        headers.forEach((h) => {
+          const td = document.createElement("td");
+          td.textContent = row[h] == null ? "" : row[h];
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+        totals.TOTAL_RECORDS += Number(row.TOTAL_RECORDS || 0);
+        totals.OC_ROWS += Number(row.OC_ROWS || 0);
+        totals.RTB_ROWS += Number(row.RTB_ROWS || 0);
+        totals.SKIPPED_ROWS += Number(row.SKIPPED_ROWS || 0);
+        totals.OC_GROUPS += Number(row.OC_GROUPS || 0);
+        totals.RTB_GROUPS += Number(row.RTB_GROUPS || 0);
+        totals.FILE_TIME_S += Number(row.FILE_TIME_S || 0);
+      });
+
+      if (state.reportRows.length) {
+        const totalRow = {
+          FILE_NAME: "TOTAL",
+          STATUS: "",
+          TOTAL_RECORDS: totals.TOTAL_RECORDS,
+          OC_ROWS: totals.OC_ROWS,
+          RTB_ROWS: totals.RTB_ROWS,
+          SKIPPED_ROWS: totals.SKIPPED_ROWS,
+          OC_GROUPS: totals.OC_GROUPS,
+          RTB_GROUPS: totals.RTB_GROUPS,
+          FILE_TIME_S: totals.FILE_TIME_S.toFixed(2),
+          ERROR: ""
+        };
+        const tr = document.createElement("tr");
+        headers.forEach((h) => {
+          const td = document.createElement("td");
+          td.textContent = totalRow[h] == null ? "" : totalRow[h];
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      }
+    }
+
+    function renderQueryTable() {
+      const mode = state.queryMode;
+      const queryRows = getFilteredQueryRows();
+      const headers = [
+        "FILE_NAME",
+        "PREFIX",
+        "ENTITY_NAME",
+        "NUMBER_OF_KEYS",
+        "TOTAL_KEYS_FOR_ENTITY",
+        mode === "select" ? "SELECT_QUERY" : "DELETE_QUERY",
+        "VALIDATION",
+        "OPTIMIZATION",
+        "PERFORMANCE"
+      ];
+
+      const thead = queryTable.querySelector("thead");
+      const tbody = queryTable.querySelector("tbody");
+      thead.innerHTML = "<tr>" + headers.map((h) => "<th>" + h + "</th>").join("") + "</tr>";
+      tbody.innerHTML = "";
+
+      if (groupByEntity.checked) {
+        const groups = new Map();
+        queryRows.forEach((row) => {
+          const key = baseEntityName(row.ENTITY_NAME);
+          if (!groups.has(key)) groups.set(key, []);
+          groups.get(key).push(row);
+        });
+
+        const collapsed = state.collapsedGroups || new Set();
+        groups.forEach((rows, groupKey) => {
+          const totalKeys = rows.reduce((sum, r) => sum + Number(r.TOTAL_KEYS_FOR_ENTITY || 0), 0);
+          const groupRow = document.createElement("tr");
+          groupRow.className = "group-row";
+          groupRow.dataset.group = groupKey;
+          const td = document.createElement("td");
+          td.colSpan = headers.length;
+          td.textContent = `${groupKey} • ${rows.length} row(s) • ${totalKeys} keys`;
+          groupRow.appendChild(td);
+          tbody.appendChild(groupRow);
+
+          if (!collapsed.has(groupKey)) {
+            rows.forEach((row) => {
+              const tr = document.createElement("tr");
+              headers.forEach((h) => {
+                const td = document.createElement("td");
+                if (h === "VALIDATION") {
+                  const text = row[h] || "";
+                  const pill = document.createElement("span");
+                  if (text.startsWith("Valid")) {
+                    pill.className = "pill ok";
+                  } else if (text.startsWith("Errors")) {
+                    pill.className = "pill error";
+                  } else {
+                    pill.className = "pill warn";
+                  }
+                  pill.textContent = truncate(text, 60);
+                  td.appendChild(pill);
+                } else if (h === "SELECT_QUERY" || h === "DELETE_QUERY") {
+                  td.className = "query-cell";
+                  const text = row[h] || "";
+                  const btn = document.createElement("button");
+                  btn.className = "mini-btn copy-btn";
+                  btn.textContent = "⧉";
+                  btn.title = "Copy query";
+                  btn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    navigator.clipboard.writeText(text);
+                  });
+                  const pre = document.createElement("div");
+                  pre.textContent = text;
+                  td.appendChild(btn);
+                  td.appendChild(pre);
+                } else {
+                  td.textContent = row[h] == null ? "" : row[h];
+                }
+                tr.appendChild(td);
+              });
+              tbody.appendChild(tr);
+            });
+          }
+        });
+      } else {
+        queryRows.forEach((row) => {
+        const tr = document.createElement("tr");
+        headers.forEach((h) => {
+          const td = document.createElement("td");
+          if (h === "VALIDATION") {
+            const text = row[h] || "";
+            const pill = document.createElement("span");
+            if (text.startsWith("Valid")) {
+              pill.className = "pill ok";
+            } else if (text.startsWith("Errors")) {
+              pill.className = "pill error";
+            } else {
+              pill.className = "pill warn";
+            }
+            pill.textContent = truncate(text, 60);
+            td.appendChild(pill);
+          } else if (h === "SELECT_QUERY" || h === "DELETE_QUERY") {
+            td.className = "query-cell";
+            const text = row[h] || "";
+            const btn = document.createElement("button");
+            btn.className = "mini-btn copy-btn";
+            btn.textContent = "⧉";
+            btn.title = "Copy query";
+            btn.addEventListener("click", (e) => {
+              e.stopPropagation();
+              navigator.clipboard.writeText(text);
+            });
+            const pre = document.createElement("div");
+            pre.textContent = text;
+            td.appendChild(btn);
+            td.appendChild(pre);
+          } else {
+            td.textContent = row[h] == null ? "" : row[h];
+          }
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+        });
+      }
+
+      querySummary.textContent = "Showing " + queryRows.length + " query group(s) in " + mode.toUpperCase() + " mode.";
+      dashMode.textContent = mode === "select" ? "Select" : "Delete";
+    }
+
+    function getFilteredQueryRows() {
+      const term = toLowerSafe(querySearch.value);
+      const fileFilter = queryFileFilter.value;
+      const prefixFilter = queryPrefixFilter.value;
+      return state.allQueryRows.filter((row) => {
+        if (fileFilter && fileFilter !== "__all__" && row.FILE_NAME !== fileFilter) return false;
+        if (prefixFilter && prefixFilter !== "__all__" && row.PREFIX !== prefixFilter) return false;
+        if (!term) return true;
+        return Object.values(row).some((value) => String(value || "").toLowerCase().includes(term));
+      });
+    }
+
+    function updateDashboard() {
+      const totals = {
+        files: state.reportRows.length,
+        records: 0,
+        ocRows: 0,
+        rtbRows: 0,
+        skipped: 0,
+        groups: 0
+      };
+      state.reportRows.forEach((row) => {
+        totals.records += Number(row.TOTAL_RECORDS || 0);
+        totals.ocRows += Number(row.OC_ROWS || 0);
+        totals.rtbRows += Number(row.RTB_ROWS || 0);
+        totals.skipped += Number(row.SKIPPED_ROWS || 0);
+        totals.groups += Number(row.OC_GROUPS || 0) + Number(row.RTB_GROUPS || 0);
+      });
+
+      dashFiles.textContent = totals.files;
+      dashRecords.textContent = totals.records;
+      dashOcRows.textContent = totals.ocRows;
+      dashRtbRows.textContent = totals.rtbRows;
+      dashSkipped.textContent = totals.skipped;
+      dashGroups.textContent = totals.groups;
+      dashRuntime.textContent = state.lastRuntime.toFixed(2);
+    }
+
+    function resetState() {
+      state.fileResults = [];
+      state.reportRows = [];
+      state.allQueryRows = [];
+      state.queryMode = "select";
+      state.collapsedGroups = new Set();
+      state.lastRuntime = 0;
+      renderReportTable();
+      renderQueryTable();
+      updateDashboard();
+      querySummary.textContent = "No data loaded.";
+      opSelect.disabled = true;
+      opDelete.disabled = true;
+      executeBtn.disabled = true;
+      genSelect.disabled = true;
+      genDelete.disabled = true;
+      genExec.disabled = true;
+      genCombined.disabled = true;
+      generateFilesBtn.disabled = true;
+      genAllBtn.disabled = true;
+      genNoneBtn.disabled = true;
+      previewBtn.disabled = true;
+      fileFilterSelect.innerHTML = '<option value="__all__">All files</option>';
+      queryFileFilter.innerHTML = '<option value="__all__">All files</option>';
+      progressFill.style.width = "0%";
+      progressSummary.textContent = "No processing yet.";
+      progressList.innerHTML = "";
+    }
+
+    async function processFiles() {
+      const files = Array.from(fileInput.files || []);
+      if (!files.length) {
+        setStatus("Please upload at least one Excel file.");
+        return;
+      }
+
+      resetState();
+      setStatus("Processing files...");
+      processBtn.disabled = true;
+
+      const options = {
+        maxKeys: Math.max(1, parseInt(document.getElementById("maxKeys").value, 10) || 500),
+        validateQueries: document.getElementById("validateQueries").checked,
+        analyzeOptimization: document.getElementById("analyzeOptimization").checked,
+        estimatePerformance: document.getElementById("estimatePerformance").checked
+      };
+
+      const startTime = performance.now();
+      setProgress(0, files.length, null, "", "0.00");
+      for (const file of files) {
+        const fileStart = performance.now();
+        try {
+          const buffer = await file.arrayBuffer();
+          const workbook = XLSX.read(buffer, { type: "array" });
+          const rows = readDetailedRunStatus(workbook);
+
+          if (!rows.length) {
+            state.reportRows.push({
+              FILE_NAME: file.name,
+              STATUS: "No data",
+              TOTAL_RECORDS: 0,
+              OC_ROWS: 0,
+              RTB_ROWS: 0,
+              SKIPPED_ROWS: 0,
+              OC_GROUPS: 0,
+              RTB_GROUPS: 0,
+              FILE_TIME_S: ((performance.now() - fileStart) / 1000).toFixed(2),
+              ERROR: ""
+            });
+            continue;
+          }
+
+          const split = splitEntitiesByPrefixRowwise(rows);
+          const ocGroups = groupKeysByEntity(split.ocRows, options.maxKeys);
+          const rtbGroups = groupKeysByEntity(split.rtbRows, options.maxKeys);
+
+          const ocOutputRows = createOutputRows(ocGroups, options, file.name, "OC");
+          const rtbOutputRows = createOutputRows(rtbGroups, options, file.name, "RTB");
+
+          state.fileResults.push({
+            fileName: file.name,
+            baseName: file.name.replace(/\.[^.]+$/, ""),
+            ocRows: ocOutputRows,
+            rtbRows: rtbOutputRows
+          });
+
+          state.reportRows.push({
+            FILE_NAME: file.name,
+            STATUS: "Processed",
+            TOTAL_RECORDS: rows.length,
+            OC_ROWS: split.ocRows.length,
+            RTB_ROWS: split.rtbRows.length,
+            SKIPPED_ROWS: split.skipped,
+            OC_GROUPS: ocGroups.length,
+            RTB_GROUPS: rtbGroups.length,
+            FILE_TIME_S: ((performance.now() - fileStart) / 1000).toFixed(2),
+            ERROR: ""
+          });
+          setProgress(state.reportRows.length, files.length, file.name, "Processed", ((performance.now() - fileStart) / 1000).toFixed(2));
+        } catch (error) {
+          state.reportRows.push({
+            FILE_NAME: file.name,
+            STATUS: "Error",
+            TOTAL_RECORDS: 0,
+            OC_ROWS: 0,
+            RTB_ROWS: 0,
+            SKIPPED_ROWS: 0,
+            OC_GROUPS: 0,
+            RTB_GROUPS: 0,
+            FILE_TIME_S: ((performance.now() - fileStart) / 1000).toFixed(2),
+            ERROR: error ? error.message : "Unknown error"
+          });
+          setProgress(state.reportRows.length, files.length, file.name, "Error", ((performance.now() - fileStart) / 1000).toFixed(2));
+        }
+      }
+
+      state.allQueryRows = state.fileResults.flatMap((result) => result.ocRows.concat(result.rtbRows));
+      state.lastRuntime = (performance.now() - startTime) / 1000;
+
+      renderReportTable();
+      updateDashboard();
+      renderQueryTable();
+      renderCharts();
+      populateFileFilter();
+
+      opSelect.disabled = false;
+      opDelete.disabled = false;
+      executeBtn.disabled = false;
+      genSelect.disabled = false;
+      genDelete.disabled = false;
+      genExec.disabled = false;
+      genCombined.disabled = false;
+      generateFilesBtn.disabled = false;
+      genAllBtn.disabled = false;
+      genNoneBtn.disabled = false;
+      previewBtn.disabled = false;
+      processBtn.disabled = false;
+      setStatus("Processing complete. Choose an operation and execute or generate files.");
+    }
+
+    function buildWorkbookForMode(mode, fileFilterValue) {
+      const workbook = XLSX.utils.book_new();
+      const existing = new Set();
+      const headers = mode === "select"
+        ? ["ENTITY_NAME", "NUMBER_OF_KEYS", "TOTAL_KEYS_FOR_ENTITY", "SELECT_QUERY", "VALIDATION", "OPTIMIZATION", "PERFORMANCE"]
+        : ["ENTITY_NAME", "NUMBER_OF_KEYS", "TOTAL_KEYS_FOR_ENTITY", "DELETE_QUERY", "VALIDATION", "OPTIMIZATION", "PERFORMANCE"];
+
+      const filtered = fileFilterValue && fileFilterValue !== "__all__"
+        ? state.fileResults.filter((result) => result.fileName === fileFilterValue)
+        : state.fileResults;
+
+      filtered.forEach((result) => {
+        const ocSheetName = makeSheetTitle(result.baseName, mode === "select" ? "oc_select" : "oc_delete", existing);
+        const rtbSheetName = makeSheetTitle(result.baseName, mode === "select" ? "rtb_select" : "rtb_delete", existing);
+        const ocRows = result.ocRows.map((row) => filterRowForMode(row, mode));
+        const rtbRows = result.rtbRows.map((row) => filterRowForMode(row, mode));
+
+        const ocSheet = XLSX.utils.json_to_sheet(ocRows, { header: headers });
+        const rtbSheet = XLSX.utils.json_to_sheet(rtbRows, { header: headers });
+
+        XLSX.utils.book_append_sheet(workbook, ocSheet, ocSheetName);
+        XLSX.utils.book_append_sheet(workbook, rtbSheet, rtbSheetName);
+      });
+
+      return workbook;
+    }
+
+    function filterRowForMode(row, mode) {
+      const base = {
+        ENTITY_NAME: row.ENTITY_NAME,
+        NUMBER_OF_KEYS: row.NUMBER_OF_KEYS,
+        TOTAL_KEYS_FOR_ENTITY: row.TOTAL_KEYS_FOR_ENTITY,
+        VALIDATION: row.VALIDATION,
+        OPTIMIZATION: row.OPTIMIZATION,
+        PERFORMANCE: row.PERFORMANCE
+      };
+      if (mode === "select") base.SELECT_QUERY = row.SELECT_QUERY;
+      if (mode === "delete") base.DELETE_QUERY = row.DELETE_QUERY;
+      return base;
+    }
+
+    function downloadWorkbook(mode) {
+      const fileFilterValue = fileFilterSelect.value;
+      const workbook = buildWorkbookForMode(mode, fileFilterValue);
+      const now = new Date();
+      const timestamp = now.toISOString().replace(/[-:]/g, "").slice(0, 15);
+      const scope = fileFilterValue && fileFilterValue !== "__all__" ? fileFilterValue.replace(/\W+/g, "_") + "_" : "";
+      const fileName = mode === "select" ? `n1ql_select_${scope}${timestamp}.xlsx` : `n1ql_delete_${scope}${timestamp}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
+    }
+
+    function downloadCombinedWorkbook() {
+      const fileFilterValue = fileFilterSelect.value;
+      const workbook = XLSX.utils.book_new();
+      const existing = new Set();
+      const filtered = fileFilterValue && fileFilterValue !== "__all__"
+        ? state.fileResults.filter((result) => result.fileName === fileFilterValue)
+        : state.fileResults;
+
+      filtered.forEach((result) => {
+        const ocSelect = makeSheetTitle(result.baseName, "oc_select", existing);
+        const rtbSelect = makeSheetTitle(result.baseName, "rtb_select", existing);
+        const ocDelete = makeSheetTitle(result.baseName, "oc_delete", existing);
+        const rtbDelete = makeSheetTitle(result.baseName, "rtb_delete", existing);
+
+        const selectHeaders = ["ENTITY_NAME", "NUMBER_OF_KEYS", "TOTAL_KEYS_FOR_ENTITY", "SELECT_QUERY", "VALIDATION", "OPTIMIZATION", "PERFORMANCE"];
+        const deleteHeaders = ["ENTITY_NAME", "NUMBER_OF_KEYS", "TOTAL_KEYS_FOR_ENTITY", "DELETE_QUERY", "VALIDATION", "OPTIMIZATION", "PERFORMANCE"];
+
+        const ocSelectSheet = XLSX.utils.json_to_sheet(result.ocRows.map((row) => filterRowForMode(row, "select")), { header: selectHeaders });
+        const rtbSelectSheet = XLSX.utils.json_to_sheet(result.rtbRows.map((row) => filterRowForMode(row, "select")), { header: selectHeaders });
+        const ocDeleteSheet = XLSX.utils.json_to_sheet(result.ocRows.map((row) => filterRowForMode(row, "delete")), { header: deleteHeaders });
+        const rtbDeleteSheet = XLSX.utils.json_to_sheet(result.rtbRows.map((row) => filterRowForMode(row, "delete")), { header: deleteHeaders });
+
+        XLSX.utils.book_append_sheet(workbook, ocSelectSheet, ocSelect);
+        XLSX.utils.book_append_sheet(workbook, rtbSelectSheet, rtbSelect);
+        XLSX.utils.book_append_sheet(workbook, ocDeleteSheet, ocDelete);
+        XLSX.utils.book_append_sheet(workbook, rtbDeleteSheet, rtbDelete);
+      });
+
+      const now = new Date();
+      const timestamp = now.toISOString().replace(/[-:]/g, "").slice(0, 15);
+      const scope = fileFilterValue && fileFilterValue !== "__all__" ? fileFilterValue.replace(/\W+/g, "_") + "_" : "";
+      XLSX.writeFile(workbook, "n1ql_combined_" + scope + timestamp + ".xlsx");
+    }
+
+    function downloadExecutionReport() {
+      const workbook = XLSX.utils.book_new();
+      const headers = [
+        "FILE_NAME",
+        "STATUS",
+        "TOTAL_RECORDS",
+        "OC_ROWS",
+        "RTB_ROWS",
+        "SKIPPED_ROWS",
+        "OC_GROUPS",
+        "RTB_GROUPS",
+        "FILE_TIME_S",
+        "ERROR"
+      ];
+
+      const fileFilterValue = fileFilterSelect.value;
+      const filtered = fileFilterValue && fileFilterValue !== "__all__"
+        ? state.reportRows.filter((row) => row.FILE_NAME === fileFilterValue)
+        : state.reportRows;
+
+      const rows = filtered.map((row) => ({
+        FILE_NAME: row.FILE_NAME || "",
+        STATUS: row.STATUS || "",
+        TOTAL_RECORDS: row.TOTAL_RECORDS || 0,
+        OC_ROWS: row.OC_ROWS || 0,
+        RTB_ROWS: row.RTB_ROWS || 0,
+        SKIPPED_ROWS: row.SKIPPED_ROWS || 0,
+        OC_GROUPS: row.OC_GROUPS || 0,
+        RTB_GROUPS: row.RTB_GROUPS || 0,
+        FILE_TIME_S: row.FILE_TIME_S || 0,
+        ERROR: row.ERROR || ""
+      }));
+
+      const sheet = XLSX.utils.json_to_sheet(rows, { header: headers });
+      XLSX.utils.book_append_sheet(workbook, sheet, "ExecutionReport");
+
+      const now = new Date();
+      const timestamp = now.toISOString().replace(/[-:]/g, "").slice(0, 15);
+      const scope = fileFilterValue && fileFilterValue !== "__all__" ? fileFilterValue.replace(/\W+/g, "_") + "_" : "";
+      XLSX.writeFile(workbook, "execution_report_" + scope + timestamp + ".xlsx");
+    }
+
+    function populateFileFilter() {
+      const current = fileFilterSelect.value || "__all__";
+      fileFilterSelect.innerHTML = '<option value="__all__">All files</option>';
+      queryFileFilter.innerHTML = '<option value="__all__">All files</option>';
+      state.fileResults.forEach((result) => {
+        const option = document.createElement("option");
+        option.value = result.fileName;
+        option.textContent = result.fileName;
+        fileFilterSelect.appendChild(option);
+        queryFileFilter.appendChild(option.cloneNode(true));
+      });
+      fileFilterSelect.value = current;
+    }
+
+    function getChartColors() {
+      const styles = getComputedStyle(document.body);
+      const isLight = document.body.classList.contains("theme-light");
+      return {
+        oc: isLight ? "#1f9d5a" : "#34d399",
+        rtb: isLight ? "#2563eb" : "#60a5fa",
+        teal: isLight ? "#0d9488" : "#5eead4",
+        text: styles.getPropertyValue("--chart-text").trim() || "#cbd5f5",
+        muted: styles.getPropertyValue("--muted").trim() || "#9ca3af",
+        grid: isLight ? "rgba(100, 116, 139, 0.25)" : "rgba(203, 213, 225, 0.25)",
+        axis: isLight ? "rgba(100, 116, 139, 0.4)" : "rgba(226, 232, 240, 0.45)"
+      };
+    }
+
+    function drawPie(canvas, ocTotal, rtbTotal) {
+      const colors = getChartColors();
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const total = ocTotal + rtbTotal || 1;
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const radius = Math.min(centerX, centerY) - 10;
+      const ocAngle = (ocTotal / total) * Math.PI * 2;
+      ctx.fillStyle = colors.oc;
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.arc(centerX, centerY, radius, 0, ocAngle);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = colors.rtb;
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.arc(centerX, centerY, radius, ocAngle, Math.PI * 2);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = colors.axis;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    function wrapText(ctx, text, x, y, maxWidth, lineHeight, maxLines) {
+      const words = String(text || "").split(/[\s_]+/);
+      const lines = [];
+      let current = "";
+
+      words.forEach((word) => {
+        const test = current ? `${current} ${word}` : word;
+        if (ctx.measureText(test).width <= maxWidth || !current) {
+          current = test;
+        } else {
+          lines.push(current);
+          current = word;
+        }
+      });
+      if (current) lines.push(current);
+
+      while (lines.length > maxLines) lines.pop();
+
+      const trimmed = lines.map((line, idx) => {
+        if (idx === maxLines - 1 && ctx.measureText(line).width > maxWidth) {
+          let trimmedLine = line;
+          while (trimmedLine.length > 0 && ctx.measureText(trimmedLine + "…").width > maxWidth) {
+            trimmedLine = trimmedLine.slice(0, -1);
+          }
+          return trimmedLine + "…";
+        }
+        return line;
+      });
+
+      trimmed.forEach((line, idx) => {
+        ctx.fillText(line, x, y + idx * lineHeight);
+      });
+    }
+
+    function renderCharts() {
+      if (!ocRtbChart || !groupChart) return;
+      const ocTotal = state.reportRows.reduce((sum, row) => sum + Number(row.OC_ROWS || 0), 0);
+      const rtbTotal = state.reportRows.reduce((sum, row) => sum + Number(row.RTB_ROWS || 0), 0);
+      const colors = getChartColors();
+
+      drawPie(ocRtbChart, ocTotal, rtbTotal);
+      const pieCtx = ocRtbChart.getContext("2d");
+      pieCtx.fillStyle = colors.muted;
+      pieCtx.font = "12px Segoe UI";
+      pieCtx.fillText("OC", 8, 18);
+      pieCtx.fillText("RTB", 8, 34);
+      pieCtx.fillStyle = colors.text;
+      pieCtx.fillText(String(ocTotal), 38, 18);
+      pieCtx.fillText(String(rtbTotal), 38, 34);
+
+      if (ocRtbFilewise) {
+        ocRtbFilewise.innerHTML = "";
+        state.reportRows.forEach((row) => {
+          const item = document.createElement("div");
+          item.className = "filewise-item";
+          const canvas = document.createElement("canvas");
+          canvas.width = 140;
+          canvas.height = 100;
+          const ocCount = Number(row.OC_ROWS || 0);
+          const rtbCount = Number(row.RTB_ROWS || 0);
+          drawPie(canvas, ocCount, rtbCount);
+          const label = document.createElement("div");
+          label.textContent = row.FILE_NAME || "File";
+          const counts = document.createElement("div");
+          counts.textContent = `OC ${ocCount} • RTB ${rtbCount}`;
+          item.appendChild(canvas);
+          item.appendChild(label);
+          item.appendChild(counts);
+          ocRtbFilewise.appendChild(item);
+        });
+      }
+
+      const barCtx = groupChart.getContext("2d");
+      barCtx.clearRect(0, 0, groupChart.width, groupChart.height);
+      const maxGroups = Math.max(
+        ...state.reportRows.map((r) => Math.max(Number(r.OC_GROUPS || 0), Number(r.RTB_GROUPS || 0))),
+        1
+      );
+      const bottomPadding = 110;
+      const axisY = groupChart.height - bottomPadding;
+      const topPadding = 20;
+      const chartHeight = axisY - topPadding;
+      const groupWidth = Math.max(30, (groupChart.width - 40) / Math.max(state.reportRows.length, 1));
+      const pointX = (idx) => 30 + idx * groupWidth + groupWidth / 2 - 2;
+      barCtx.strokeStyle = colors.axis;
+      barCtx.beginPath();
+      barCtx.moveTo(24, topPadding);
+      barCtx.lineTo(24, axisY);
+      barCtx.lineTo(groupChart.width - 8, axisY);
+      barCtx.stroke();
+
+      barCtx.fillStyle = colors.muted;
+      barCtx.font = "10px Segoe UI";
+      barCtx.textAlign = "right";
+      barCtx.textBaseline = "middle";
+      for (let i = 0; i <= 3; i++) {
+        const value = Math.round((maxGroups / 3) * i);
+        const y = axisY - (chartHeight / 3) * i;
+        barCtx.fillText(String(value), 18, y);
+        barCtx.strokeStyle = colors.grid;
+        barCtx.beginPath();
+        barCtx.moveTo(24, y);
+        barCtx.lineTo(groupChart.width - 8, y);
+        barCtx.stroke();
+      }
+
+      const ocPoints = [];
+      const rtbPoints = [];
+      state.reportRows.forEach((row, idx) => {
+        const oc = Number(row.OC_GROUPS || 0);
+        const rtb = Number(row.RTB_GROUPS || 0);
+        const ocHeight = (oc / maxGroups) * chartHeight;
+        const rtbHeight = (rtb / maxGroups) * chartHeight;
+        const x = pointX(idx);
+        const ocY = axisY - ocHeight;
+        const rtbY = axisY - rtbHeight;
+        ocPoints.push({ x, y: ocY, value: oc, file: row.FILE_NAME || `File ${idx + 1}` });
+        rtbPoints.push({ x, y: rtbY, value: rtb, file: row.FILE_NAME || `File ${idx + 1}` });
+
+        barCtx.fillStyle = colors.text;
+        barCtx.font = "8.5px Segoe UI";
+        barCtx.textAlign = "center";
+        barCtx.textBaseline = "top";
+        const label = row.FILE_NAME || `File ${idx + 1}`;
+        const maxWidth = groupWidth - 6;
+        wrapText(barCtx, label, x, axisY + 8, maxWidth, 12, 4);
+      });
+
+      function drawLine(points, color) {
+        if (!points.length) return;
+        barCtx.strokeStyle = color;
+        barCtx.lineWidth = 2.5;
+        barCtx.beginPath();
+        barCtx.moveTo(points[0].x, points[0].y);
+        points.slice(1).forEach((p) => barCtx.lineTo(p.x, p.y));
+        barCtx.stroke();
+        barCtx.fillStyle = color;
+        points.forEach((p) => {
+          barCtx.beginPath();
+          barCtx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+          barCtx.fill();
+        });
+        barCtx.lineWidth = 1;
+      }
+
+      drawLine(ocPoints, colors.oc);
+      drawLine(rtbPoints, colors.rtb);
+
+      barCtx.fillStyle = colors.text;
+      barCtx.font = "9px Segoe UI";
+      barCtx.textAlign = "center";
+      barCtx.textBaseline = "bottom";
+      ocPoints.forEach((p) => {
+        barCtx.fillText(String(p.value), p.x, p.y - 6);
+      });
+      rtbPoints.forEach((p) => {
+        barCtx.fillText(String(p.value), p.x, p.y - 6);
+      });
+    }
+
+    processBtn.addEventListener("click", processFiles);
+
+    opSelect.addEventListener("change", () => {
+      if (opSelect.checked) {
+        state.queryMode = "select";
+      }
+    });
+
+    opDelete.addEventListener("change", () => {
+      if (opDelete.checked) {
+        state.queryMode = "delete";
+      }
+    });
+
+    executeBtn.addEventListener("click", () => {
+      state.queryMode = opDelete.checked ? "delete" : "select";
+      renderQueryTable();
+    });
+
+    generateFilesBtn.addEventListener("click", () => {
+      if (genSelect.checked) downloadWorkbook("select");
+      if (genDelete.checked) downloadWorkbook("delete");
+      if (genExec.checked) downloadExecutionReport();
+      if (genCombined.checked) downloadCombinedWorkbook();
+    });
+
+    genAllBtn.addEventListener("click", () => {
+      genSelect.checked = true;
+      genDelete.checked = true;
+      genExec.checked = true;
+      genCombined.checked = true;
+    });
+
+    genNoneBtn.addEventListener("click", () => {
+      genSelect.checked = false;
+      genDelete.checked = false;
+      genExec.checked = false;
+      genCombined.checked = false;
+    });
+
+    previewBtn.addEventListener("click", () => {
+      const fileName = fileFilterSelect.value;
+      const row = state.reportRows.find((r) => r.FILE_NAME === fileName);
+      previewTitle.textContent = fileName && fileName !== "__all__" ? `File Summary: ${fileName}` : "File Summary";
+      const headers = ["FILE_NAME", "STATUS", "TOTAL_RECORDS", "OC_ROWS", "RTB_ROWS", "SKIPPED_ROWS", "OC_GROUPS", "RTB_GROUPS", "FILE_TIME_S"];
+      const thead = previewTable.querySelector("thead");
+      const tbody = previewTable.querySelector("tbody");
+      thead.innerHTML = "<tr>" + headers.map((h) => "<th>" + h + "</th>").join("") + "</tr>";
+      tbody.innerHTML = "";
+      if (row) {
+        const tr = document.createElement("tr");
+        headers.forEach((h) => {
+          const td = document.createElement("td");
+          td.textContent = row[h] == null ? "" : row[h];
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      }
+      previewModal.classList.add("open");
+    });
+
+    previewClose.addEventListener("click", () => previewModal.classList.remove("open"));
+    previewModal.addEventListener("click", (e) => {
+      if (e.target === previewModal) previewModal.classList.remove("open");
+    });
+
+    querySearch.addEventListener("input", () => renderQueryTable());
+    queryFileFilter.addEventListener("change", () => renderQueryTable());
+    queryPrefixFilter.addEventListener("change", () => renderQueryTable());
+    groupByEntity.addEventListener("change", () => renderQueryTable());
+    queryTable.addEventListener("click", (event) => {
+      const row = event.target.closest(".group-row");
+      if (!row) return;
+      const groupKey = row.dataset.group;
+      if (!state.collapsedGroups) state.collapsedGroups = new Set();
+      if (state.collapsedGroups.has(groupKey)) {
+        state.collapsedGroups.delete(groupKey);
+      } else {
+        state.collapsedGroups.add(groupKey);
+      }
+      renderQueryTable();
+    });
+
+    themeToggle.addEventListener("change", () => {
+      document.body.classList.toggle("theme-light", themeToggle.checked);
+      localStorage.setItem("ui-theme", themeToggle.checked ? "light" : "dark");
+    });
+
+    refreshBtn.addEventListener("click", () => {
+      window.location.reload();
+    });
+
+    const savedTheme = localStorage.getItem("ui-theme");
+    if (savedTheme === "light") {
+      themeToggle.checked = true;
+      document.body.classList.add("theme-light");
+    }
+
+    function downloadCanvas(canvas, filename) {
+      const link = document.createElement("a");
+      link.download = filename;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    }
+
+    downloadPieBtn.addEventListener("click", () => {
+      downloadCanvas(ocRtbChart, "oc_rtb_pie.png");
+    });
+    downloadLineBtn.addEventListener("click", () => {
+      downloadCanvas(groupChart, "groups_per_file.png");
+    });
+
+    function bindChartTooltips() {
+      if (ocRtbChart && ocRtbTooltip) {
+        ocRtbChart.addEventListener("mousemove", (event) => {
+          const rect = ocRtbChart.getBoundingClientRect();
+          const x = event.clientX - rect.left;
+          const y = event.clientY - rect.top;
+          const centerX = ocRtbChart.width / 2;
+          const centerY = ocRtbChart.height / 2;
+          const radius = Math.min(centerX, centerY) - 16;
+          const dx = x - centerX;
+          const dy = y - centerY;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist <= radius) {
+            const angle = Math.atan2(dy, dx);
+            const normalized = angle < 0 ? angle + Math.PI * 2 : angle;
+            const ocTotal = state.reportRows.reduce((sum, row) => sum + Number(row.OC_ROWS || 0), 0);
+            const rtbTotal = state.reportRows.reduce((sum, row) => sum + Number(row.RTB_ROWS || 0), 0);
+            const total = ocTotal + rtbTotal || 1;
+            const ocAngle = (ocTotal / total) * Math.PI * 2;
+            if (normalized <= ocAngle) {
+              ocRtbTooltip.textContent = `OC Rows: ${ocTotal}`;
+            } else {
+              ocRtbTooltip.textContent = `RTB Rows: ${rtbTotal}`;
+            }
+            ocRtbTooltip.style.left = `${x}px`;
+            ocRtbTooltip.style.top = `${y}px`;
+            ocRtbTooltip.style.opacity = "1";
+          } else {
+            ocRtbTooltip.style.opacity = "0";
+          }
+        });
+        ocRtbChart.addEventListener("mouseleave", () => {
+          ocRtbTooltip.style.opacity = "0";
+        });
+      }
+
+      if (groupChart && groupTooltip) {
+        groupChart.addEventListener("mousemove", (event) => {
+          const rect = groupChart.getBoundingClientRect();
+          const x = event.clientX - rect.left;
+          const y = event.clientY - rect.top;
+          const bottomPadding = 110;
+          const axisY = groupChart.height - bottomPadding;
+          const chartHeight = axisY - 10;
+          const groupWidth = Math.max(30, (groupChart.width - 40) / Math.max(state.reportRows.length, 1));
+          const index = Math.floor((x - 30) / groupWidth);
+          if (index >= 0 && index < state.reportRows.length) {
+            const row = state.reportRows[index];
+            const oc = Number(row.OC_GROUPS || 0);
+            const rtb = Number(row.RTB_GROUPS || 0);
+            const maxGroups = Math.max(
+              ...state.reportRows.map((r) => Math.max(Number(r.OC_GROUPS || 0), Number(r.RTB_GROUPS || 0))),
+              1
+            );
+            const ocHeight = (oc / maxGroups) * chartHeight;
+            const rtbHeight = (rtb / maxGroups) * chartHeight;
+            const pointX = 30 + index * groupWidth + groupWidth / 2 - 2;
+            const ocY = axisY - ocHeight;
+            const rtbY = axisY - rtbHeight;
+            const distOc = Math.hypot(x - pointX, y - ocY);
+            const distRtb = Math.hypot(x - pointX, y - rtbY);
+            if (distOc <= 8 || distRtb <= 8) {
+              groupTooltip.textContent = distOc <= distRtb
+                ? `${row.FILE_NAME}: OC Groups ${oc}`
+                : `${row.FILE_NAME}: RTB Groups ${rtb}`;
+              groupTooltip.style.left = `${x}px`;
+              groupTooltip.style.top = `${y}px`;
+              groupTooltip.style.opacity = "1";
+              return;
+            }
+          }
+          groupTooltip.style.opacity = "0";
+        });
+        groupChart.addEventListener("mouseleave", () => {
+          groupTooltip.style.opacity = "0";
+        });
+      }
+    }
+
+    bindChartTooltips();
+
+      resetState();
+    }
+
+    waitForXlsx()
+      .then(startApp)
+      .catch(() => {
+        const msg = document.createElement("div");
+        msg.style.cssText = "background:#4b1313;color:#fff;padding:10px;font-family:Segoe UI,Arial,sans-serif";
+        msg.textContent = "XLSX library did not load. Please allow CDN access or add a local copy.";
+        document.body.prepend(msg);
+      });
+  </script>
+  <div class="modal" id="previewModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="previewTitle">File Summary</h3>
+        <button id="previewClose" class="mini-btn">Close</button>
+      </div>
+      <div class="table-wrap">
+        <table id="previewTable">
+          <thead></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
