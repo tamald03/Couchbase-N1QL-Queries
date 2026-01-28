@@ -34,46 +34,48 @@
   </script>
   <style>
     :root {
-      --bg: #101826;
-      --panel: #141e30;
-      --panel-2: #1c2a42;
-      --accent: #ff8a5b;
-      --accent-2: #6dd3ff;
-      --text: #eef2f7;
-      --muted: #a8b3c7;
-      --warn: #f59e0b;
-      --error: #ef4444;
-      --card: #0f1724;
-      --border: #2b3b55;
-      --header-start: #0f1724;
-      --header-end: #16233a;
-      --table-head-start: #18263d;
-      --table-head-end: #1f2f49;
-      --action-bg: rgba(22, 35, 58, 0.6);
-      --surface-glow: rgba(4, 9, 17, 0.35);
-      --bg-gradient-1: rgba(109, 211, 255, 0.2);
-      --bg-gradient-2: rgba(255, 138, 91, 0.18);
-      --chart-text: #dbe6f7;
+      --bg: #0b1220;
+      --panel: #121a2a;
+      --panel-2: #172237;
+      --accent: #ff7bd5;
+      --accent-2: #4de1ff;
+      --text: #ffffff;
+      --muted: #ffffff;
+      --warn: #f7b955;
+      --error: #ff6b8f;
+      --card: #0d1524;
+      --border: #253453;
+      --header-start: #101829;
+      --header-end: #1a2942;
+      --table-head-start: #16243a;
+      --table-head-end: #1f2f4a;
+      --action-bg: rgba(18, 28, 48, 0.65);
+      --surface-glow: rgba(77, 225, 255, 0.12);
+      --bg-gradient-1: rgba(77, 225, 255, 0.22);
+      --bg-gradient-2: rgba(255, 123, 213, 0.18);
+      --chart-text: #62ccff;
+      --chart-muted: #62ccff;
     }
     body.theme-light {
-      --bg: #f5f7fb;
+      --bg: #f4f7ff;
       --panel: #ffffff;
-      --panel-2: #eef3f8;
-      --accent: #ff7a59;
-      --accent-2: #3aa6ff;
-      --text: #1f2a3a;
-      --muted: #53627a;
+      --panel-2: #edf3ff;
+      --accent: #ff65c2;
+      --accent-2: #34d8ff;
+      --text: #000000;
+      --muted: #000000;
       --card: #ffffff;
-      --border: #d9e1ee;
+      --border: #d3def2;
       --header-start: #ffffff;
-      --header-end: #f2f5fb;
-      --table-head-start: #eaf0f9;
-      --table-head-end: #dfe8f5;
-      --action-bg: rgba(238, 243, 248, 0.85);
-      --surface-glow: rgba(16, 24, 39, 0.08);
-      --bg-gradient-1: rgba(58, 166, 255, 0.16);
-      --bg-gradient-2: rgba(255, 122, 89, 0.12);
-      --chart-text: #2a364a;
+      --header-end: #eef3ff;
+      --table-head-start: #e8f1ff;
+      --table-head-end: #dfeaff;
+      --action-bg: rgba(237, 243, 255, 0.9);
+      --surface-glow: rgba(255, 101, 194, 0.08);
+      --bg-gradient-1: rgba(52, 216, 255, 0.18);
+      --bg-gradient-2: rgba(255, 101, 194, 0.14);
+      --chart-text: #1f4b99;
+      --chart-muted: #1f4b99;
     }
 
     * { box-sizing: border-box; }
@@ -388,14 +390,14 @@
     }
     .chart-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr;
       gap: 12px;
     }
     .chart-card {
       background: var(--panel-2);
       border: 1px solid var(--border);
       border-radius: 10px;
-      padding: 10px;
+      padding: 8px;
     }
     .chart-card h4 {
       margin: 0;
@@ -407,7 +409,7 @@
       align-items: center;
       justify-content: space-between;
       gap: 8px;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
     .chart-card canvas {
       width: 100%;
@@ -479,6 +481,34 @@
       font-size: 11px;
       max-width: 480px;
       word-break: break-word;
+    }
+    .query-actions {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .prefix-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      color: var(--text);
+    }
+    .prefix-chip.oc {
+      background: rgba(255, 101, 194, 0.18);
+      border-color: rgba(255, 101, 194, 0.35);
+      color: #ff65c2;
+    }
+    .prefix-chip.rtb {
+      background: rgba(52, 216, 255, 0.18);
+      border-color: rgba(52, 216, 255, 0.35);
+      color: #34d8ff;
     }
     .table-wrap {
       max-height: 52vh;
@@ -563,6 +593,32 @@
       gap: 10px;
       align-items: center;
     }
+    .query-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .query-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+    .query-row .field {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .inline-controls .mini-btn.primary {
+      background: var(--accent);
+      color: #081018;
+      border-color: var(--accent);
+    }
+    .inline-controls .mini-btn.alt {
+      background: var(--accent-2);
+      color: #06212c;
+      border-color: var(--accent-2);
+    }
     .mini-btn {
       padding: 6px 10px;
       border-radius: 6px;
@@ -578,6 +634,21 @@
     .copy-btn {
       margin-top: 6px;
       display: inline-block;
+    }
+    .filter-btn.active {
+      background: var(--accent);
+      color: #081018;
+      border-color: var(--accent);
+    }
+    .filter-label {
+      color: var(--muted);
+      font-size: 11px;
+    }
+    .modal-header .copy-btn {
+      margin-top: 0;
+    }
+    .query-actions .copy-btn {
+      margin-top: 0;
     }
     .modal {
       position: fixed;
@@ -601,9 +672,41 @@
     }
     .modal-header {
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      gap: 10px;
       margin-bottom: 10px;
+    }
+    .modal-actions {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .diff-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .diff-pane {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel-2);
+      padding: 8px;
+      max-height: 50vh;
+      overflow: auto;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 11px;
+      white-space: pre-wrap;
+    }
+    .diff-title {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    @media (max-width: 900px) {
+      .diff-grid {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
@@ -629,6 +732,10 @@
             <label for="fileInput">Upload Excel file(s)</label>
             <input id="fileInput" type="file" multiple accept=".xlsx,.xls" />
           </div>
+          <div class="inline-controls">
+            <button id="saveSettingsBtn" class="mini-btn primary">Save Settings</button>
+            <button id="loadSettingsBtn" class="mini-btn">Load Settings</button>
+          </div>
           <div class="control-group">
             <label for="maxKeys">Max keys per group</label>
             <input id="maxKeys" type="number" min="1" value="500" />
@@ -647,9 +754,9 @@
               <label for="estimatePerformance">Performance estimate</label>
             </div>
           </div>
+          <button id="processBtn" class="btn">PROCESS FILES</button>
         </div>
         <div class="panel-right">
-          <button id="processBtn" class="btn">PROCESS FILES</button>
           <div class="control-group action-section">
             <label>Operation</label>
             <div class="checkbox-row">
@@ -721,22 +828,58 @@
       </div>
 
       <div class="panel section">
+        <h3>Entity Enquiry</h3>
+        <div class="toolbar">
+          <input id="entityInput" type="text" placeholder="Enter entity name (e.g., oc_customer, rtb_order)" list="entityList" />
+          <button id="entitySearchBtn" class="mini-btn" disabled>Search</button>
+        </div>
+        <datalist id="entityList"></datalist>
+        <div class="table-wrap">
+          <table id="entityTable">
+            <thead></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel section">
         <h3>Query Results</h3>
         <div class="toolbar">
           <div class="status" id="querySummary">No data loaded.</div>
           <input id="querySearch" type="text" placeholder="Search by entity, file, or query..." />
         </div>
-        <div class="inline-controls">
-          <label for="queryFileFilter">File</label>
-          <select id="queryFileFilter">
-            <option value="__all__">All files</option>
-          </select>
-          <label for="queryPrefixFilter">Prefix</label>
-          <select id="queryPrefixFilter">
-            <option value="__all__">All</option>
-            <option value="OC">OC</option>
-            <option value="RTB">RTB</option>
-          </select>
+        <div class="query-controls">
+          <div class="query-row">
+            <div class="field">
+              <label for="queryFileFilter">File</label>
+              <select id="queryFileFilter">
+                <option value="__all__">All files</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="queryPrefixFilter">Prefix</label>
+              <select id="queryPrefixFilter">
+                <option value="__all__">All</option>
+                <option value="OC">OC</option>
+                <option value="RTB">RTB</option>
+              </select>
+            </div>
+            <span class="filter-label">Quick</span>
+            <button class="mini-btn filter-btn" data-quick-filter="oc">OC Only</button>
+            <button class="mini-btn filter-btn" data-quick-filter="rtb">RTB Only</button>
+            <button class="mini-btn filter-btn" data-quick-filter="errors">Errors Only</button>
+            <button class="mini-btn filter-btn" data-quick-filter="all">All</button>
+            <label><input id="toggleValidation" type="checkbox" checked /> Validation</label>
+            <label><input id="toggleOptimization" type="checkbox" checked /> Optimization</label>
+          </div>
+          <div class="query-row">
+            <button id="selectFilteredBtn" class="mini-btn">Select Filtered</button>
+            <button id="clearSelectionBtn" class="mini-btn">Clear Selection</button>
+            <button id="copyAllBtn" class="mini-btn alt">Copy All</button>
+            <button id="downloadSelectedBtn" class="mini-btn primary">Download Selected</button>
+            <button id="exportCsvBtn" class="mini-btn" disabled>Export CSV</button>
+            <button id="exportJsonBtn" class="mini-btn" disabled>Export JSON</button>
+          </div>
         </div>
         <div class="checkbox-row">
           <input id="groupByEntity" type="checkbox" />
@@ -764,7 +907,7 @@
               <button id="downloadPieBtn" class="mini-btn">Download PNG</button>
             </div>
             <div class="chart-wrap">
-              <canvas id="ocRtbChart" height="160"></canvas>
+              <canvas id="ocRtbChart" height="120"></canvas>
               <div class="chart-tooltip" id="ocRtbTooltip"></div>
             </div>
             <div class="filewise-pies" id="ocRtbFilewise"></div>
@@ -779,7 +922,7 @@
               <button id="downloadLineBtn" class="mini-btn">Download PNG</button>
             </div>
             <div class="chart-wrap">
-              <canvas id="groupChart" height="260"></canvas>
+              <canvas id="groupChart" height="200"></canvas>
               <div class="chart-tooltip" id="groupTooltip"></div>
             </div>
           </div>
@@ -811,7 +954,8 @@
       reportRows: [],
       queryMode: "select",
       allQueryRows: [],
-      lastRuntime: 0
+      lastRuntime: 0,
+      quickFilter: "all"
     };
 
     const fileInput = document.getElementById("fileInput");
@@ -837,6 +981,21 @@
     const querySearch = document.getElementById("querySearch");
     const queryFileFilter = document.getElementById("queryFileFilter");
     const queryPrefixFilter = document.getElementById("queryPrefixFilter");
+    const quickFilterButtons = document.querySelectorAll("[data-quick-filter]");
+    const toggleValidation = document.getElementById("toggleValidation");
+    const toggleOptimization = document.getElementById("toggleOptimization");
+    const selectFilteredBtn = document.getElementById("selectFilteredBtn");
+    const clearSelectionBtn = document.getElementById("clearSelectionBtn");
+    const copyAllBtn = document.getElementById("copyAllBtn");
+    const downloadSelectedBtn = document.getElementById("downloadSelectedBtn");
+    const exportCsvBtn = document.getElementById("exportCsvBtn");
+    const exportJsonBtn = document.getElementById("exportJsonBtn");
+    const saveSettingsBtn = document.getElementById("saveSettingsBtn");
+    const loadSettingsBtn = document.getElementById("loadSettingsBtn");
+    const entityInput = document.getElementById("entityInput");
+    const entitySearchBtn = document.getElementById("entitySearchBtn");
+    const entityTable = document.getElementById("entityTable");
+    const entityList = document.getElementById("entityList");
     const groupByEntity = document.getElementById("groupByEntity");
     const ocRtbChart = document.getElementById("ocRtbChart");
     const groupChart = document.getElementById("groupChart");
@@ -851,6 +1010,18 @@
     const previewClose = document.getElementById("previewClose");
     const previewTitle = document.getElementById("previewTitle");
     const previewTable = document.getElementById("previewTable");
+    const queryModal = document.getElementById("queryModal");
+    const queryClose = document.getElementById("queryClose");
+    const queryCopyBtn = document.getElementById("queryCopyBtn");
+    const queryModalTitle = document.getElementById("queryModalTitle");
+    const queryModalBody = document.getElementById("queryModalBody");
+    const diffModal = document.getElementById("diffModal");
+    const diffClose = document.getElementById("diffClose");
+    const diffModalTitle = document.getElementById("diffModalTitle");
+    const diffSelectBody = document.getElementById("diffSelectBody");
+    const diffDeleteBody = document.getElementById("diffDeleteBody");
+    const diffCopySelectBtn = document.getElementById("diffCopySelectBtn");
+    const diffCopyDeleteBtn = document.getElementById("diffCopyDeleteBtn");
 
     const dashFiles = document.getElementById("dashFiles");
     const dashRecords = document.getElementById("dashRecords");
@@ -893,6 +1064,13 @@
       return text.trim();
     }
 
+    function normalizeEntityKey(value) {
+      let text = normalizeEntityName(value);
+      text = text.replace(/[`"'’]/g, "");
+      text = text.replace(/\s+/g, "");
+      return text.toLowerCase();
+    }
+
     function formatEntityName(entityName) {
       if (!entityName) return entityName;
       return entityName.startsWith("`") ? entityName : "`" + entityName;
@@ -908,6 +1086,52 @@
       const value = String(text || "");
       if (value.length <= max) return value;
       return value.slice(0, max - 3) + "...";
+    }
+
+    function formatQuery(query) {
+      const keywords = [
+        "GROUP BY",
+        "ORDER BY",
+        "LEFT JOIN",
+        "RIGHT JOIN",
+        "INNER JOIN",
+        "UNNEST",
+        "SELECT",
+        "DELETE",
+        "FROM",
+        "WHERE",
+        "AND",
+        "OR",
+        "LIMIT",
+        "OFFSET",
+        "LET",
+        "JOIN",
+        "UPDATE",
+        "SET",
+        "RETURNING"
+      ];
+      let text = String(query || "").replace(/\s+/g, " ").trim();
+      keywords.forEach((kw) => {
+        const pattern = new RegExp("\\b" + kw.replace(" ", "\\s+") + "\\b", "gi");
+        text = text.replace(pattern, "\n" + kw);
+      });
+      return text.replace(/\n{2,}/g, "\n").trim();
+    }
+
+    function showQueryModal(title, rawQuery) {
+      queryModalTitle.textContent = title;
+      queryModalBody.textContent = formatQuery(rawQuery);
+      queryModalBody.dataset.raw = rawQuery || "";
+      queryModal.classList.add("open");
+    }
+
+    function showDiffModal(row) {
+      diffModalTitle.textContent = "Select vs Delete";
+      diffSelectBody.textContent = formatQuery(row.SELECT_QUERY || "");
+      diffDeleteBody.textContent = formatQuery(row.DELETE_QUERY || "");
+      diffSelectBody.dataset.raw = row.SELECT_QUERY || "";
+      diffDeleteBody.dataset.raw = row.DELETE_QUERY || "";
+      diffModal.classList.add("open");
     }
 
     function readDetailedRunStatus(workbook) {
@@ -938,6 +1162,18 @@
         results.push({ ENTITY_NAME: entity, KEY: key });
       }
       return results;
+    }
+
+    function getMissingColumns(workbook) {
+      const sheet = workbook.Sheets[INPUT_SHEET_NAME];
+      if (!sheet) return ["Missing sheet: " + INPUT_SHEET_NAME];
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null });
+      if (!rows.length) return ["Missing header row"];
+      const headers = rows[0].map((h) => String(h || "").trim().toLowerCase());
+      const missing = [];
+      if (!headers.includes("entity_name")) missing.push("ENTITY_NAME");
+      if (!headers.includes("key")) missing.push("KEY");
+      return missing;
     }
 
     function splitEntitiesByPrefixRowwise(rows) {
@@ -1346,7 +1582,7 @@
     }
 
     function renderReportTable() {
-      const headers = ["FILE_NAME", "STATUS", "TOTAL_RECORDS", "OC_ROWS", "RTB_ROWS", "SKIPPED_ROWS", "OC_GROUPS", "RTB_GROUPS", "FILE_TIME_S", "ERROR"];
+      const headers = ["FILE_NAME", "STATUS", "TOTAL_RECORDS", "OC_ROWS", "RTB_ROWS", "SKIPPED_ROWS", "OC_GROUPS", "RTB_GROUPS", "ENTITY_COUNT", "FILE_TIME_S", "ERROR"];
       const thead = reportTable.querySelector("thead");
       const tbody = reportTable.querySelector("tbody");
       thead.innerHTML = "<tr>" + headers.map((h) => "<th>" + h + "</th>").join("") + "</tr>";
@@ -1358,6 +1594,7 @@
         SKIPPED_ROWS: 0,
         OC_GROUPS: 0,
         RTB_GROUPS: 0,
+        ENTITY_COUNT: 0,
         FILE_TIME_S: 0
       };
       state.reportRows.forEach((row) => {
@@ -1374,6 +1611,7 @@
         totals.SKIPPED_ROWS += Number(row.SKIPPED_ROWS || 0);
         totals.OC_GROUPS += Number(row.OC_GROUPS || 0);
         totals.RTB_GROUPS += Number(row.RTB_GROUPS || 0);
+        totals.ENTITY_COUNT += Number(row.ENTITY_COUNT || 0);
         totals.FILE_TIME_S += Number(row.FILE_TIME_S || 0);
       });
 
@@ -1387,6 +1625,7 @@
           SKIPPED_ROWS: totals.SKIPPED_ROWS,
           OC_GROUPS: totals.OC_GROUPS,
           RTB_GROUPS: totals.RTB_GROUPS,
+          ENTITY_COUNT: totals.ENTITY_COUNT,
           FILE_TIME_S: totals.FILE_TIME_S.toFixed(2),
           ERROR: ""
         };
@@ -1404,14 +1643,15 @@
       const mode = state.queryMode;
       const queryRows = getFilteredQueryRows();
       const headers = [
+        "SELECT_ROW",
         "FILE_NAME",
         "PREFIX",
         "ENTITY_NAME",
         "NUMBER_OF_KEYS",
         "TOTAL_KEYS_FOR_ENTITY",
         mode === "select" ? "SELECT_QUERY" : "DELETE_QUERY",
-        "VALIDATION",
-        "OPTIMIZATION",
+        ...(toggleValidation.checked ? ["VALIDATION"] : []),
+        ...(toggleOptimization.checked ? ["OPTIMIZATION"] : []),
         "PERFORMANCE"
       ];
 
@@ -1445,7 +1685,24 @@
               const tr = document.createElement("tr");
               headers.forEach((h) => {
                 const td = document.createElement("td");
-                if (h === "VALIDATION") {
+            if (h === "SELECT_ROW") {
+              const checkbox = document.createElement("input");
+              checkbox.type = "checkbox";
+              const id = `${row.FILE_NAME}|${row.ENTITY_NAME}|${row.NUMBER_OF_KEYS}`;
+              checkbox.checked = state.selectedRowIds?.has(id) || false;
+              checkbox.addEventListener("change", () => {
+                if (!state.selectedRowIds) state.selectedRowIds = new Set();
+                if (checkbox.checked) state.selectedRowIds.add(id);
+                else state.selectedRowIds.delete(id);
+              });
+              td.appendChild(checkbox);
+            } else if (h === "PREFIX") {
+              const chip = document.createElement("span");
+              const prefix = row.PREFIX || "";
+              chip.className = "prefix-chip " + prefix.toLowerCase();
+              chip.textContent = prefix;
+              td.appendChild(chip);
+            } else if (h === "VALIDATION") {
                   const text = row[h] || "";
                   const pill = document.createElement("span");
                   if (text.startsWith("Valid")) {
@@ -1460,6 +1717,8 @@
                 } else if (h === "SELECT_QUERY" || h === "DELETE_QUERY") {
                   td.className = "query-cell";
                   const text = row[h] || "";
+                  const actions = document.createElement("div");
+                  actions.className = "query-actions";
                   const btn = document.createElement("button");
                   btn.className = "mini-btn copy-btn";
                   btn.textContent = "⧉";
@@ -1468,9 +1727,21 @@
                     e.stopPropagation();
                     navigator.clipboard.writeText(text);
                   });
+                  actions.appendChild(btn);
+                  if (row.SELECT_QUERY && row.DELETE_QUERY) {
+                    const diffBtn = document.createElement("button");
+                    diffBtn.className = "mini-btn";
+                    diffBtn.textContent = "Diff";
+                    diffBtn.title = "Compare select vs delete";
+                    diffBtn.addEventListener("click", (e) => {
+                      e.stopPropagation();
+                      showDiffModal(row);
+                    });
+                    actions.appendChild(diffBtn);
+                  }
                   const pre = document.createElement("div");
-                  pre.textContent = text;
-                  td.appendChild(btn);
+                  pre.textContent = formatQuery(text);
+                  td.appendChild(actions);
                   td.appendChild(pre);
                 } else {
                   td.textContent = row[h] == null ? "" : row[h];
@@ -1486,7 +1757,24 @@
         const tr = document.createElement("tr");
         headers.forEach((h) => {
           const td = document.createElement("td");
-          if (h === "VALIDATION") {
+          if (h === "SELECT_ROW") {
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            const id = `${row.FILE_NAME}|${row.ENTITY_NAME}|${row.NUMBER_OF_KEYS}`;
+            checkbox.checked = state.selectedRowIds?.has(id) || false;
+            checkbox.addEventListener("change", () => {
+              if (!state.selectedRowIds) state.selectedRowIds = new Set();
+              if (checkbox.checked) state.selectedRowIds.add(id);
+              else state.selectedRowIds.delete(id);
+            });
+            td.appendChild(checkbox);
+          } else if (h === "PREFIX") {
+            const chip = document.createElement("span");
+            const prefix = row.PREFIX || "";
+            chip.className = "prefix-chip " + prefix.toLowerCase();
+            chip.textContent = prefix;
+            td.appendChild(chip);
+          } else if (h === "VALIDATION") {
             const text = row[h] || "";
             const pill = document.createElement("span");
             if (text.startsWith("Valid")) {
@@ -1501,6 +1789,8 @@
           } else if (h === "SELECT_QUERY" || h === "DELETE_QUERY") {
             td.className = "query-cell";
             const text = row[h] || "";
+            const actions = document.createElement("div");
+            actions.className = "query-actions";
             const btn = document.createElement("button");
             btn.className = "mini-btn copy-btn";
             btn.textContent = "⧉";
@@ -1509,9 +1799,21 @@
               e.stopPropagation();
               navigator.clipboard.writeText(text);
             });
+            actions.appendChild(btn);
+            if (row.SELECT_QUERY && row.DELETE_QUERY) {
+              const diffBtn = document.createElement("button");
+              diffBtn.className = "mini-btn";
+              diffBtn.textContent = "Diff";
+              diffBtn.title = "Compare select vs delete";
+              diffBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                showDiffModal(row);
+              });
+              actions.appendChild(diffBtn);
+            }
             const pre = document.createElement("div");
-            pre.textContent = text;
-            td.appendChild(btn);
+            pre.textContent = formatQuery(text);
+            td.appendChild(actions);
             td.appendChild(pre);
           } else {
             td.textContent = row[h] == null ? "" : row[h];
@@ -1526,16 +1828,119 @@
       dashMode.textContent = mode === "select" ? "Select" : "Delete";
     }
 
+    function renderEntityEnquiry(entityName) {
+      const normalized = normalizeEntityKey(entityName);
+      const parts = normalized.split(".").filter(Boolean);
+      const bucket = parts[0] || normalized;
+      const prefix = bucket.startsWith("oc_") ? "OC" : bucket.startsWith("rtb_") ? "RTB" : "Unknown";
+      const normalizedRows = state.allQueryRows.map((row) => ({
+        row,
+        key: normalizeEntityKey(baseEntityName(row.ENTITY_NAME))
+      }));
+      let rows = normalizedRows.filter((item) => item.key === normalized).map((item) => item.row);
+      if (!rows.length && bucket) {
+        rows = normalizedRows.filter((item) => item.key.split(".")[0] === bucket).map((item) => item.row);
+      }
+
+      const thead = entityTable.querySelector("thead");
+      const tbody = entityTable.querySelector("tbody");
+      const headers = [
+        "FILE_NAME",
+        "ENTITY_NAME",
+        "PREFIX",
+        "TOTAL_KEYS",
+        "SELECT_QUERY",
+        "DELETE_QUERY",
+        "SELECT_VALIDATION",
+        "DELETE_VALIDATION",
+        "TOTAL_TIME_S"
+      ];
+      thead.innerHTML = "<tr>" + headers.map((h) => "<th>" + h + "</th>").join("") + "</tr>";
+      tbody.innerHTML = "";
+
+      if (!rows.length) {
+        const tr = document.createElement("tr");
+        const td = document.createElement("td");
+        td.colSpan = headers.length;
+        td.textContent = "No matching entity found.";
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+        return;
+      }
+
+      rows.forEach((row) => {
+        const tr = document.createElement("tr");
+        const selectIssues = validateN1qlQuery(row.SELECT_QUERY || "", "SELECT");
+        const deleteIssues = validateN1qlQuery(row.DELETE_QUERY || "", "DELETE");
+        const selectValidation = buildValidationSummary(selectIssues);
+        const deleteValidation = buildValidationSummary(deleteIssues);
+        const totalTime = row.PERFORMANCE && row.PERFORMANCE.includes("~")
+          ? row.PERFORMANCE.split("|")[1].replace("~", "").trim().replace("ms", "")
+          : "";
+
+        const values = {
+          FILE_NAME: row.FILE_NAME || row.FILE || "",
+          ENTITY_NAME: row.ENTITY_NAME,
+          PREFIX: row.PREFIX || prefix,
+          TOTAL_KEYS: row.TOTAL_KEYS_FOR_ENTITY,
+          SELECT_QUERY: row.SELECT_QUERY,
+          DELETE_QUERY: row.DELETE_QUERY,
+          SELECT_VALIDATION: selectValidation,
+          DELETE_VALIDATION: deleteValidation,
+          TOTAL_TIME_S: totalTime ? (Number(totalTime) / 1000).toFixed(2) : ""
+        };
+
+        headers.forEach((h) => {
+          const td = document.createElement("td");
+          if (h === "PREFIX") {
+            const chip = document.createElement("span");
+            const prefix = values[h] || "";
+            chip.className = "prefix-chip " + String(prefix).toLowerCase();
+            chip.textContent = prefix;
+            td.appendChild(chip);
+          } else if (h === "SELECT_QUERY" || h === "DELETE_QUERY") {
+            const btn = document.createElement("button");
+            btn.className = "mini-btn";
+            btn.textContent = h === "SELECT_QUERY" ? "Select Query" : "Delete Query";
+            btn.addEventListener("click", () => {
+              showQueryModal(h === "SELECT_QUERY" ? "Select Query" : "Delete Query", values[h] || "");
+            });
+            td.appendChild(btn);
+          } else {
+            td.textContent = values[h] == null ? "" : values[h];
+          }
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+    }
+
     function getFilteredQueryRows() {
       const term = toLowerSafe(querySearch.value);
       const fileFilter = queryFileFilter.value;
       const prefixFilter = queryPrefixFilter.value;
+      const quickFilter = state.quickFilter || "all";
       return state.allQueryRows.filter((row) => {
         if (fileFilter && fileFilter !== "__all__" && row.FILE_NAME !== fileFilter) return false;
         if (prefixFilter && prefixFilter !== "__all__" && row.PREFIX !== prefixFilter) return false;
+        if (quickFilter === "oc" && row.PREFIX !== "OC") return false;
+        if (quickFilter === "rtb" && row.PREFIX !== "RTB") return false;
+        if (quickFilter === "errors") {
+          const validationText = String(row.VALIDATION || "").toLowerCase();
+          const hasError = validationText.startsWith("errors") || validationText.includes("error");
+          if (!hasError) return false;
+        }
         if (!term) return true;
         return Object.values(row).some((value) => String(value || "").toLowerCase().includes(term));
       });
+    }
+
+    function setQuickFilter(value) {
+      state.quickFilter = value;
+      quickFilterButtons.forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.quickFilter === value);
+      });
+      renderQueryTable();
     }
 
     function updateDashboard() {
@@ -1570,6 +1975,7 @@
       state.allQueryRows = [];
       state.queryMode = "select";
       state.collapsedGroups = new Set();
+      state.selectedRowIds = new Set();
       state.lastRuntime = 0;
       renderReportTable();
       renderQueryTable();
@@ -1586,11 +1992,15 @@
       genAllBtn.disabled = true;
       genNoneBtn.disabled = true;
       previewBtn.disabled = true;
+      exportCsvBtn.disabled = true;
+      exportJsonBtn.disabled = true;
       fileFilterSelect.innerHTML = '<option value="__all__">All files</option>';
       queryFileFilter.innerHTML = '<option value="__all__">All files</option>';
       progressFill.style.width = "0%";
       progressSummary.textContent = "No processing yet.";
       progressList.innerHTML = "";
+      entityList.innerHTML = "";
+      setQuickFilter("all");
     }
 
     async function processFiles() {
@@ -1618,6 +2028,23 @@
         try {
           const buffer = await file.arrayBuffer();
           const workbook = XLSX.read(buffer, { type: "array" });
+          const missing = getMissingColumns(workbook);
+          if (missing.length) {
+            state.reportRows.push({
+              FILE_NAME: file.name,
+              STATUS: "Error",
+              TOTAL_RECORDS: 0,
+              OC_ROWS: 0,
+              RTB_ROWS: 0,
+              SKIPPED_ROWS: 0,
+              OC_GROUPS: 0,
+              RTB_GROUPS: 0,
+              FILE_TIME_S: ((performance.now() - fileStart) / 1000).toFixed(2),
+              ERROR: "Missing columns: " + missing.join(", ")
+            });
+            setProgress(state.reportRows.length, files.length, file.name, "Missing columns", ((performance.now() - fileStart) / 1000).toFixed(2));
+            continue;
+          }
           const rows = readDetailedRunStatus(workbook);
 
           if (!rows.length) {
@@ -1659,6 +2086,7 @@
             SKIPPED_ROWS: split.skipped,
             OC_GROUPS: ocGroups.length,
             RTB_GROUPS: rtbGroups.length,
+            ENTITY_COUNT: new Set(rows.map((r) => normalizeEntityName(r.ENTITY_NAME))).size,
             FILE_TIME_S: ((performance.now() - fileStart) / 1000).toFixed(2),
             ERROR: ""
           });
@@ -1688,6 +2116,7 @@
       renderQueryTable();
       renderCharts();
       populateFileFilter();
+      populateEntityList();
 
       opSelect.disabled = false;
       opDelete.disabled = false;
@@ -1700,6 +2129,9 @@
       genAllBtn.disabled = false;
       genNoneBtn.disabled = false;
       previewBtn.disabled = false;
+      exportCsvBtn.disabled = false;
+      exportJsonBtn.disabled = false;
+      entitySearchBtn.disabled = false;
       processBtn.disabled = false;
       setStatus("Processing complete. Choose an operation and execute or generate files.");
     }
@@ -1755,6 +2187,60 @@
       XLSX.writeFile(workbook, fileName);
     }
 
+    function getQueryExportHeaders(mode) {
+      return [
+        "FILE_NAME",
+        "PREFIX",
+        "ENTITY_NAME",
+        "NUMBER_OF_KEYS",
+        "TOTAL_KEYS_FOR_ENTITY",
+        mode === "select" ? "SELECT_QUERY" : "DELETE_QUERY",
+        "VALIDATION",
+        "OPTIMIZATION",
+        "PERFORMANCE"
+      ];
+    }
+
+    function getQueryExportRows() {
+      const mode = state.queryMode;
+      const rows = getFilteredQueryRows();
+      return rows.map((row) => ({
+        FILE_NAME: row.FILE_NAME || "",
+        PREFIX: row.PREFIX || "",
+        ENTITY_NAME: row.ENTITY_NAME || "",
+        NUMBER_OF_KEYS: row.NUMBER_OF_KEYS || 0,
+        TOTAL_KEYS_FOR_ENTITY: row.TOTAL_KEYS_FOR_ENTITY || 0,
+        ...(mode === "select" ? { SELECT_QUERY: row.SELECT_QUERY || "" } : { DELETE_QUERY: row.DELETE_QUERY || "" }),
+        VALIDATION: row.VALIDATION || "",
+        OPTIMIZATION: row.OPTIMIZATION || "",
+        PERFORMANCE: row.PERFORMANCE || ""
+      }));
+    }
+
+    function csvEscape(value) {
+      const text = String(value ?? "");
+      if (/[",\n]/.test(text)) return `"${text.replace(/"/g, "\"\"")}"`;
+      return text;
+    }
+
+    function toCsv(rows, headers) {
+      const lines = [headers.join(",")];
+      rows.forEach((row) => {
+        lines.push(headers.map((h) => csvEscape(row[h])).join(","));
+      });
+      return lines.join("\n");
+    }
+
+    function downloadTextFile(content, filename, mimeType) {
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.download = filename;
+      link.href = url;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 0);
+    }
+
     function downloadCombinedWorkbook() {
       const fileFilterValue = fileFilterSelect.value;
       const workbook = XLSX.utils.book_new();
@@ -1800,6 +2286,7 @@
         "SKIPPED_ROWS",
         "OC_GROUPS",
         "RTB_GROUPS",
+        "ENTITY_COUNT",
         "FILE_TIME_S",
         "ERROR"
       ];
@@ -1818,6 +2305,7 @@
         SKIPPED_ROWS: row.SKIPPED_ROWS || 0,
         OC_GROUPS: row.OC_GROUPS || 0,
         RTB_GROUPS: row.RTB_GROUPS || 0,
+        ENTITY_COUNT: row.ENTITY_COUNT || 0,
         FILE_TIME_S: row.FILE_TIME_S || 0,
         ERROR: row.ERROR || ""
       }));
@@ -1833,29 +2321,41 @@
 
     function populateFileFilter() {
       const current = fileFilterSelect.value || "__all__";
-      fileFilterSelect.innerHTML = '<option value="__all__">All files</option>';
-      queryFileFilter.innerHTML = '<option value="__all__">All files</option>';
+      const totalCount = state.fileResults.reduce((sum, result) => sum + result.ocRows.length + result.rtbRows.length, 0);
+      fileFilterSelect.innerHTML = `<option value="__all__">All files (${totalCount})</option>`;
+      queryFileFilter.innerHTML = `<option value="__all__">All files (${totalCount})</option>`;
       state.fileResults.forEach((result) => {
+        const count = result.ocRows.length + result.rtbRows.length;
         const option = document.createElement("option");
         option.value = result.fileName;
-        option.textContent = result.fileName;
+        option.textContent = `${result.fileName} (${count})`;
         fileFilterSelect.appendChild(option);
         queryFileFilter.appendChild(option.cloneNode(true));
       });
       fileFilterSelect.value = current;
     }
 
+    function populateEntityList() {
+      const entities = new Set(state.allQueryRows.map((row) => baseEntityName(row.ENTITY_NAME)));
+      entityList.innerHTML = "";
+      Array.from(entities).sort().forEach((name) => {
+        const option = document.createElement("option");
+        option.value = name;
+        entityList.appendChild(option);
+      });
+    }
+
     function getChartColors() {
       const styles = getComputedStyle(document.body);
       const isLight = document.body.classList.contains("theme-light");
       return {
-        oc: isLight ? "#1f9d5a" : "#34d399",
-        rtb: isLight ? "#2563eb" : "#60a5fa",
-        teal: isLight ? "#0d9488" : "#5eead4",
+        oc: isLight ? "#1f9d5a" : "#45f0b2",
+        rtb: isLight ? "#2563eb" : "#62ccff",
+        teal: isLight ? "#0d9488" : "#6cf6ff",
         text: styles.getPropertyValue("--chart-text").trim() || "#cbd5f5",
-        muted: styles.getPropertyValue("--muted").trim() || "#9ca3af",
-        grid: isLight ? "rgba(100, 116, 139, 0.25)" : "rgba(203, 213, 225, 0.25)",
-        axis: isLight ? "rgba(100, 116, 139, 0.4)" : "rgba(226, 232, 240, 0.45)"
+        muted: styles.getPropertyValue("--chart-muted").trim() || styles.getPropertyValue("--muted").trim() || "#9ca3af",
+        grid: isLight ? "rgba(100, 116, 139, 0.25)" : "rgba(173, 202, 255, 0.25)",
+        axis: isLight ? "rgba(100, 116, 139, 0.4)" : "rgba(210, 232, 255, 0.6)"
       };
     }
 
@@ -2072,6 +2572,90 @@
       if (genCombined.checked) downloadCombinedWorkbook();
     });
 
+    selectFilteredBtn.addEventListener("click", () => {
+      const rows = getFilteredQueryRows();
+      rows.forEach((row) => {
+        const id = `${row.FILE_NAME}|${row.ENTITY_NAME}|${row.NUMBER_OF_KEYS}`;
+        state.selectedRowIds.add(id);
+      });
+      renderQueryTable();
+    });
+
+    clearSelectionBtn.addEventListener("click", () => {
+      state.selectedRowIds.clear();
+      renderQueryTable();
+    });
+
+    copyAllBtn.addEventListener("click", () => {
+      const rows = getFilteredQueryRows();
+      const field = state.queryMode === "select" ? "SELECT_QUERY" : "DELETE_QUERY";
+      const text = rows.map((row) => row[field]).filter(Boolean).join("\n\n");
+      navigator.clipboard.writeText(text);
+    });
+
+    exportCsvBtn.addEventListener("click", () => {
+      const rows = getQueryExportRows();
+      if (!rows.length) return;
+      const headers = getQueryExportHeaders(state.queryMode);
+      const csv = toCsv(rows, headers);
+      const now = new Date();
+      const timestamp = now.toISOString().replace(/[-:]/g, "").slice(0, 15);
+      downloadTextFile(csv, `n1ql_${state.queryMode}_filtered_${timestamp}.csv`, "text/csv");
+    });
+
+    exportJsonBtn.addEventListener("click", () => {
+      const rows = getQueryExportRows();
+      if (!rows.length) return;
+      const now = new Date();
+      const timestamp = now.toISOString().replace(/[-:]/g, "").slice(0, 15);
+      const json = JSON.stringify(rows, null, 2);
+      downloadTextFile(json, `n1ql_${state.queryMode}_filtered_${timestamp}.json`, "application/json");
+    });
+
+    downloadSelectedBtn.addEventListener("click", () => {
+      const rows = getFilteredQueryRows().filter((row) => {
+        const id = `${row.FILE_NAME}|${row.ENTITY_NAME}|${row.NUMBER_OF_KEYS}`;
+        return state.selectedRowIds.has(id);
+      });
+      if (!rows.length) return;
+      const headers = state.queryMode === "select"
+        ? ["ENTITY_NAME", "NUMBER_OF_KEYS", "TOTAL_KEYS_FOR_ENTITY", "SELECT_QUERY", "VALIDATION", "OPTIMIZATION", "PERFORMANCE"]
+        : ["ENTITY_NAME", "NUMBER_OF_KEYS", "TOTAL_KEYS_FOR_ENTITY", "DELETE_QUERY", "VALIDATION", "OPTIMIZATION", "PERFORMANCE"];
+      const data = rows.map((row) => filterRowForMode(row, state.queryMode));
+      const workbook = XLSX.utils.book_new();
+      const sheet = XLSX.utils.json_to_sheet(data, { header: headers });
+      XLSX.utils.book_append_sheet(workbook, sheet, "Selected");
+      const now = new Date();
+      const timestamp = now.toISOString().replace(/[-:]/g, "").slice(0, 15);
+      XLSX.writeFile(workbook, `n1ql_selected_${timestamp}.xlsx`);
+    });
+
+    saveSettingsBtn.addEventListener("click", () => {
+      const settings = {
+        maxKeys: document.getElementById("maxKeys").value,
+        validateQueries: document.getElementById("validateQueries").checked,
+        analyzeOptimization: document.getElementById("analyzeOptimization").checked,
+        estimatePerformance: document.getElementById("estimatePerformance").checked,
+        operation: opDelete.checked ? "delete" : "select"
+      };
+      localStorage.setItem("ui-settings", JSON.stringify(settings));
+    });
+
+    loadSettingsBtn.addEventListener("click", () => {
+      const settings = JSON.parse(localStorage.getItem("ui-settings") || "{}");
+      if (settings.maxKeys != null) document.getElementById("maxKeys").value = settings.maxKeys;
+      if (settings.validateQueries != null) document.getElementById("validateQueries").checked = settings.validateQueries;
+      if (settings.analyzeOptimization != null) document.getElementById("analyzeOptimization").checked = settings.analyzeOptimization;
+      if (settings.estimatePerformance != null) document.getElementById("estimatePerformance").checked = settings.estimatePerformance;
+      if (settings.operation === "delete") {
+        opDelete.checked = true;
+        opSelect.checked = false;
+      } else {
+        opSelect.checked = true;
+        opDelete.checked = false;
+      }
+    });
+
     genAllBtn.addEventListener("click", () => {
       genSelect.checked = true;
       genDelete.checked = true;
@@ -2115,11 +2699,44 @@
     previewModal.addEventListener("click", (e) => {
       if (e.target === previewModal) previewModal.classList.remove("open");
     });
+    queryCopyBtn.addEventListener("click", () => {
+      const text = queryModalBody.dataset.raw || queryModalBody.textContent || "";
+      if (text) navigator.clipboard.writeText(text);
+    });
+    queryClose.addEventListener("click", () => queryModal.classList.remove("open"));
+    queryModal.addEventListener("click", (e) => {
+      if (e.target === queryModal) queryModal.classList.remove("open");
+    });
+    diffClose.addEventListener("click", () => diffModal.classList.remove("open"));
+    diffModal.addEventListener("click", (e) => {
+      if (e.target === diffModal) diffModal.classList.remove("open");
+    });
+    diffCopySelectBtn.addEventListener("click", () => {
+      const text = diffSelectBody.dataset.raw || diffSelectBody.textContent || "";
+      if (text) navigator.clipboard.writeText(text);
+    });
+    diffCopyDeleteBtn.addEventListener("click", () => {
+      const text = diffDeleteBody.dataset.raw || diffDeleteBody.textContent || "";
+      if (text) navigator.clipboard.writeText(text);
+    });
+
+    entitySearchBtn.addEventListener("click", () => {
+      renderEntityEnquiry(entityInput.value);
+    });
+    entityInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") renderEntityEnquiry(entityInput.value);
+    });
 
     querySearch.addEventListener("input", () => renderQueryTable());
     queryFileFilter.addEventListener("change", () => renderQueryTable());
     queryPrefixFilter.addEventListener("change", () => renderQueryTable());
+    toggleValidation.addEventListener("change", () => renderQueryTable());
+    toggleOptimization.addEventListener("change", () => renderQueryTable());
     groupByEntity.addEventListener("change", () => renderQueryTable());
+    quickFilterButtons.forEach((btn) => {
+      btn.addEventListener("click", () => setQuickFilter(btn.dataset.quickFilter));
+    });
+    setQuickFilter("all");
     queryTable.addEventListener("click", (event) => {
       const row = event.target.closest(".group-row");
       if (!row) return;
@@ -2267,6 +2884,53 @@
           <tbody></tbody>
         </table>
       </div>
+    </div>
+  </div>
+  <div class="modal" id="queryModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="queryModalTitle">Query</h3>
+        <div class="modal-actions">
+          <button id="queryCopyBtn" class="mini-btn copy-btn" title="Copy query">⧉</button>
+          <button id="queryClose" class="mini-btn">Close</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Query</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="query-cell" id="queryModalBody"></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="modal" id="diffModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="diffModalTitle">Query Diff</h3>
+        <div class="modal-actions">
+          <button id="diffClose" class="mini-btn">Close</button>
+        </div>
+      </div>
+        <div class="diff-grid">
+          <div>
+            <div class="diff-title">Select Query</div>
+            <div class="query-actions">
+              <button id="diffCopySelectBtn" class="mini-btn copy-btn" title="Copy select query">⧉</button>
+            </div>
+            <div class="diff-pane" id="diffSelectBody"></div>
+          </div>
+          <div>
+            <div class="diff-title">Delete Query</div>
+            <div class="query-actions">
+              <button id="diffCopyDeleteBtn" class="mini-btn copy-btn" title="Copy delete query">⧉</button>
+            </div>
+            <div class="diff-pane" id="diffDeleteBody"></div>
+          </div>
+        </div>
     </div>
   </div>
 </body>
